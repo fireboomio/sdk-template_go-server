@@ -1,6 +1,11 @@
 package types
 
-import "custom-go/pkg/plugins"
+import (
+	"custom-go/pkg/base"
+	"custom-go/pkg/plugins"
+)
+
+var WdgHooksAndServerConfig WunderGraphHooksAndServerConfig
 
 type WunderGraphHooksAndServerConfig struct {
 	Webhooks       WebhooksConfig
@@ -27,6 +32,15 @@ type Verifier struct {
 type EnvironmentVariable[DefaultValue string] struct {
 	Name         string
 	DefaultValue DefaultValue
+}
+
+type HooksConfiguration struct {
+	Global         plugins.GlobalConfiguration
+	Authentication plugins.AuthenticationConfiguration
+	Queries        base.OperationHooks
+	Mutations      base.OperationHooks
+	Subscriptions  base.OperationHooks
+	Uploads        map[string]plugins.UploadHooks
 }
 
 type ServerOptions struct {

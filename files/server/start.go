@@ -1,4 +1,4 @@
-package cmd
+package server
 
 import (
 	"custom-go/pkg/base"
@@ -6,7 +6,6 @@ import (
 	"custom-go/pkg/types"
 	"custom-go/pkg/utils"
 	"custom-go/pkg/wgpb"
-	"custom-go/server"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	"github.com/labstack/gommon/log"
@@ -44,27 +43,27 @@ func configureWunderGraphServer() *echo.Echo {
 	}
 	e.Use(middleware.CORSWithConfig(corsCfg))
 
-	plugins.RegisterGlobalHooks(e, server.ConfigureWunderGraphServer.Hooks.Global)
-	plugins.RegisterAuthHooks(e, server.ConfigureWunderGraphServer.Hooks.Authentication)
-	plugins.RegisterUploadsHooks(e, server.ConfigureWunderGraphServer.Hooks.Uploads)
+	plugins.RegisterGlobalHooks(e, types.WdgHooksAndServerConfig.Hooks.Global)
+	plugins.RegisterAuthHooks(e, types.WdgHooksAndServerConfig.Hooks.Authentication)
+	plugins.RegisterUploadsHooks(e, types.WdgHooksAndServerConfig.Hooks.Uploads)
 
 	var internalQueries, internalMutations base.OperationDefinitions
 	nodeUrl := utils.GetConfigurationVal(types.WdgGraphConfig.Api.NodeOptions.NodeUrl)
 	queryOperations := filterOperationsHooks(types.WdgGraphConfig.Api.Operations, wgpb.OperationType_QUERY)
 	if queryLen := len(queryOperations); queryLen > 0 {
 		internalQueries = plugins.BuildInternalRequest(e.Logger, nodeUrl, queryOperations)
-		plugins.RegisterOperationsHooks(e, queryOperations, server.ConfigureWunderGraphServer.Hooks.Queries)
+		plugins.RegisterOperationsHooks(e, queryOperations, types.WdgHooksAndServerConfig.Hooks.Queries)
 		e.Logger.Debugf(`Registered (%d) query operations`, queryLen)
 	}
 	mutationOperations := filterOperationsHooks(types.WdgGraphConfig.Api.Operations, wgpb.OperationType_MUTATION)
 	if mutationLen := len(mutationOperations); mutationLen > 0 {
 		internalMutations = plugins.BuildInternalRequest(e.Logger, nodeUrl, mutationOperations)
-		plugins.RegisterOperationsHooks(e, mutationOperations, server.ConfigureWunderGraphServer.Hooks.Mutations)
+		plugins.RegisterOperationsHooks(e, mutationOperations, types.WdgHooksAndServerConfig.Hooks.Mutations)
 		e.Logger.Debugf(`Registered (%d) mutation operations`, mutationLen)
 	}
 	subscriptionOperations := filterOperationsHooks(types.WdgGraphConfig.Api.Operations, wgpb.OperationType_SUBSCRIPTION)
 	if subscriptionLen := len(subscriptionOperations); subscriptionLen > 0 {
-		plugins.RegisterOperationsHooks(e, subscriptionOperations, server.ConfigureWunderGraphServer.Hooks.Subscriptions)
+		plugins.RegisterOperationsHooks(e, subscriptionOperations, types.WdgHooksAndServerConfig.Hooks.Subscriptions)
 		e.Logger.Debugf(`Registered (%d) subscription operations`, subscriptionLen)
 	}
 
@@ -93,7 +92,7 @@ func configureWunderGraphServer() *echo.Echo {
 		}
 	})
 
-	for _, gqlServer := range server.ConfigureWunderGraphServer.GraphqlServers {
+	for _, gqlServer := range types.WdgHooksAndServerConfig.GraphqlServers {
 		plugins.RegisterGraphql(e, gqlServer)
 	}
 
@@ -135,7 +134,7 @@ func startServer() error {
 
 func filterOperationsHooks(operations []*types.OperationStruct, operationType wgpb.OperationType) (result []string) {
 	for _, operation := range operations {
-		if operation.OperationType == operationType {
+		if operation.OperationType == operationType && operation.Path != "" {
 			result = append(result, operation.Path)
 		}
 	}

@@ -1,9 +1,9 @@
 package main
 
 import (
-	"custom-go/pkg/cmd"
+	"custom-go/server"
 )
 
 func main() {
-	cmd.Execute()
+	server.Execute()
 }
