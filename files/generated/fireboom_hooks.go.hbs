@@ -1,0 +1,34 @@
+package generated
+{{#if (isNotEmpty operations)}}
+import "custom-go/pkg/base"
+{{/if}}
+
+{{#with operations}}
+    {{#if (isNotEmpty this)}}
+type (
+{{#each this}}
+    {{name}}Body = *base.OperationBody[{{#if hasInput}}{{fmtSprintf '%sInput' name}}{{else}}any{{/if}}, {{name}}Response]
+{{/each}}
+)
+    {{/if}}
+{{/with}}
+
+{{#with (filterOperations operations 'isQuery' true)}}
+    {{#if (isNotEmpty this)}}
+const (
+    {{#each this}}
+    {{name}} base.OperationQueryPath = "{{path}}"
+    {{/each}}
+)
+    {{/if}}
+{{/with}}
+
+{{#with (filterOperations operations 'isMutation' true)}}
+    {{#if (isNotEmpty this)}}
+const (
+    {{#each this}}
+    {{name}} base.OperationMutationPath = "{{path}}"
+    {{/each}}
+)
+    {{/if}}
+{{/with}}

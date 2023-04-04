@@ -1,0 +1,1 @@
+{{~upperFirst name}} {{fixSpace name maxLength.name}}{{#if isArray}}[]{{/if}}{{> struct_property_type type=type}} `json:"{{name}}{{#unless isRequired}},omitempty{{/unless}}"`
