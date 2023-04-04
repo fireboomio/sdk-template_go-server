@@ -85,7 +85,7 @@ func init() {
                 "{{name}}": {
                 {{#each uploadProfiles}}
                     {{#if (isAnyTrue hooks.preUpload hooks.postUpload)}}
-                    {{#with (getMaxLength maxLengthMap (fmtSprintf '%s_%s_%s' 'Uploads' name @key) hooks)}}
+                    {{#with (getMaxLength maxLengthMap (fmtSprintf 'Uploads_%s_%s' name @key) hooks)}}
                     "{{@key}}": {
                     {{#if hooks.preUpload}}
                         PreUpload: {{fixSpace 'PreUpload' this.name}}{{fmtSprintf 'uploads_%s_%s' ../name @key}}.PreUpload,

@@ -9,8 +9,10 @@ type (
         {{#if hasInternalInput}}
     {{> struct_definition mergeType=true requiredKeys=internalSchema.required schemaData=internalSchema.properties parentName=(fmtSprintf 'Internal%sInput' name)}}
         {{/if}}
-        {{#each inputSchema.definitions as |schema name|}}
+        {{#each inputSchema.definitions as |schema name|~}}
+    {{#if (isAbsent onceMap (fmtSprintf 'models_%s' name) schema)}}
     {{> struct_definition mergeType=true requiredKeys=schema.required schemaData=schema.properties parentName=name}}
+    {{/if}}
         {{/each}}
     {{~/if}}
     {{~#equal engine 0}}
