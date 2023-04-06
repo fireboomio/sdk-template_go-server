@@ -12,8 +12,10 @@ type GlobalConfiguration struct {
 }
 
 type HttpTransportBody struct {
-	Name string `json:"operationName"`
-	Type string `json:"operationType"`
+	Request  *base.ClientRequest  `json:"request"`
+	Response *base.ClientResponse `json:"response"`
+	Name     string               `json:"operationName"`
+	Type     string               `json:"operationType"`
 }
 
 type WsTransportBody struct {
@@ -21,8 +23,8 @@ type WsTransportBody struct {
 }
 
 type HttpTransportHooks struct {
-	OnOriginRequest  func(*base.HttpTransportHookRequest, *HttpTransportBody) (*http.Request, error)
-	OnOriginResponse func(*base.HttpTransportHookRequest, *HttpTransportBody) (*echo.Response, error)
+	OnOriginRequest  func(*base.HttpTransportHookRequest, *HttpTransportBody) (*base.ClientRequest, error)
+	OnOriginResponse func(*base.HttpTransportHookRequest, *HttpTransportBody) (*base.ClientResponse, error)
 }
 
 type WsTransportHooks struct {
@@ -68,6 +70,7 @@ func RegisterGlobalHooks(e *echo.Echo, globalHooks GlobalConfiguration) {
 				return echo.NewHTTPError(http.StatusBadRequest, err.Error())
 			}
 
+			respBody.Response = &base.ClientResponse{StatusCode: http.StatusOK}
 			newResp, err := globalHooks.HttpTransport.OnOriginResponse(brc, &respBody)
 			if err != nil {
 				return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
