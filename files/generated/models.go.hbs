@@ -34,6 +34,7 @@ type (
     {{~/equal}}
     {{~#each subSchemaMap as |schema name|}}
     {{> struct_definition mergeType=true requiredKeys=schema.required schemaData=schema.schema parentName=name}}
+
     {{/each}}
 )
 
