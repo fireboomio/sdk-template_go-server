@@ -31,7 +31,7 @@ type (
     {{> struct_definition mergeType=true requiredKeys=required schemaData=properties parentName=(fmtSprintf '%sResponseData' name)}}
             {{/with}}
         {{/if}}
-    {{~/equal}}
+    {{~/equal~}}
     {{~#each subSchemaMap as |schema name|~}}
         {{~> struct_recursion requiredKeys=schema.required schemaData=schema.schema parentName=name~}}
     {{~/each}}
