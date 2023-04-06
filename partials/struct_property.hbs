@@ -1,1 +1,1 @@
-{{~upperFirst name}} {{fixSpace name maxLength.name}}{{#if isArray}}[]{{/if}}{{#if type}}{{> struct_property_type type=type}}{{else}}*{{upperFirst (subStringAfter ref '#/definitions/')}}{{/if}} `json:"{{name}}{{#unless isRequired}},omitempty{{/unless}}"`
+{{~upperFirst (trimPrefix name '_')}} {{fixSpace (trimPrefix name '_') maxLength.name}}{{#if isArray}}[]{{/if}}{{#if type}}{{> struct_property_type type=type}}{{else}}*{{upperFirst (subStringAfter ref '#/definitions/')}}{{/if}} `json:"{{name}}{{#unless isRequired}},omitempty{{/unless}}"`
