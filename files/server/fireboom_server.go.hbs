@@ -71,7 +71,7 @@ func init() {
                 "{{operationName}}": {
                 {{#with (getMaxLength maxLengthMap (fmtSprintf '%s_%s' hookType operationName) operationConf.tsPathMap)}}
                 {{#each operationConf.tsPathMap as |tsPath hookName|}}
-                    {{upperFirst hookName}}: {{fixSpace hookName this.name}}plugins.ConvertBodyFunc[generated.{{replaceSpecial operationName "__"}}Input, generated.{{replaceSpecial operationName "__"}}Response](hooks_{{replaceSpecial operationName "__"}}.{{upperFirst hookName}}),
+                    {{upperFirst hookName}}: {{fixSpace hookName this.name}}plugins.ConvertBodyFunc[generated.{{replaceSpecial operationName "__"}}Input, generated.{{replaceSpecial operationName "__"}}ResponseData](hooks_{{replaceSpecial operationName "__"}}.{{upperFirst hookName}}),
                 {{/each~}}
                 {{/with}}
                 },
