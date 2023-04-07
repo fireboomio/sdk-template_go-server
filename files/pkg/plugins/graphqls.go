@@ -23,9 +23,10 @@ type GraphQLServerConfig struct {
 }
 
 type graphqlBody struct {
-	Query         string         `json:"query"`
-	OperationName string         `json:"operationName"`
-	Extensions    map[string]any `json:"extensions"`
+	Query         string                 `json:"query"`
+	Variables     map[string]interface{} `json:"variables"`
+	OperationName string                 `json:"operationName"`
+	Extensions    map[string]any         `json:"extensions"`
 }
 
 var htmlBytesMap = make(map[string][]byte, 0)
@@ -63,9 +64,10 @@ func RegisterGraphql(e *echo.Echo, gqlServer GraphQLServerConfig) {
 
 		brc := c.(*base.BaseRequestContext)
 		param := graphql.Params{
-			Schema:        gqlServer.Schema,
-			OperationName: body.OperationName,
-			RequestString: body.Query,
+			Schema:         gqlServer.Schema,
+			OperationName:  body.OperationName,
+			RequestString:  body.Query,
+			VariableValues: body.Variables,
 			Context: &base.GraphqlRequestContext{
 				Context:        c.Request().Context(),
 				User:           brc.User,
