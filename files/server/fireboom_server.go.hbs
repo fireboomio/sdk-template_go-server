@@ -8,7 +8,7 @@ import (
         {{/if}}
     {{/equal}}
     {{~#equal hookType "Global"}}
-        {{#if (isAnyTrue (isNotEmpty hookConf.httpTransport.OnOriginRequest.TsPath) (isNotEmpty hookConf.httpTransport.OnOriginResponse.TsPath))}}
+        {{#if (isAnyTrue (isNotEmpty hookConf.httpTransport.onOriginRequest.tsPath) (isNotEmpty hookConf.httpTransport.onOriginResponse.tsPath) (isNotEmpty hookConf.wsTransport.onConnectionInit.tsPath))}}
     "custom-go/global"
         {{/if}}
     {{/equal}}
@@ -52,7 +52,11 @@ func init() {
                 {{/with}}
                 },
                 WsTransport: plugins.WsTransportHooks{
-                    OnConnectionInit: nil,
+                {{#with hookConf.wsTransport.onConnectionInit}}
+                    {{#if (isNotEmpty tsPath)}}
+                    OnConnectionInit: global.OnConnectionInit,
+                    {{/if}}
+                {{/with}}
                 },
             },
             {{/equal}}
@@ -103,16 +107,14 @@ func init() {
     		},
     	},
     	GraphqlServers: []plugins.GraphQLServerConfig{
-        {{#each dataSources}}
-            {{#if isCustomized~}}
+            {{#each dataSources}}{{#if isCustomized~}}
             {
                 ApiNamespace:          "{{apiNameSpace}}",
                 ServerName:            "{{apiNameSpace}}",
                 EnableGraphQLEndpoint: true,
                 Schema:                customize.{{upperFirst apiNameSpace}}_schema,
             },
-            {{~/if}}
-        {{/each}}
+            {{~/if}}{{/each}}
     	},
     }
 }

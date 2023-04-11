@@ -28,7 +28,7 @@ type HttpTransportHooks struct {
 }
 
 type WsTransportHooks struct {
-	OnConnectionInit func(*base.WsTransportHookRequest, *WsTransportBody) (interface{}, error)
+	OnConnectionInit func(*base.WsTransportHookRequest, *WsTransportBody) (any, error)
 }
 
 func RegisterGlobalHooks(e *echo.Echo, globalHooks GlobalConfiguration) {
