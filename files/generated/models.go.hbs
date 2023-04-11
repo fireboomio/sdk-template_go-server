@@ -1,6 +1,7 @@
 package generated
 
 {{#each operations}}
+{{#if (isAnyTrue hasInput hasInternalInput (isNotEmpty inputSchema.definitions) hasInjectedInput (isNotEmpty responseSchema))}}
 type (
 	{{#if (isNotEmpty inputSchema)}}
 		{{#if hasInput}}
@@ -20,11 +21,6 @@ type (
     {{> struct_definition mergeType=true requiredKeys=injectedSchema.required schemaData=injectedSchema.properties parentName=(fmtSprintf 'Injected%sInput' name)}}
         {{/if}}
     {{/equal}}
-    {{name}}Response struct {
-        {{#if (isNotEmpty responseSchema)}}
-        Data {{name}}ResponseData `json:"data"`
-        {{/if}}
-    }
     {{#equal engine 0}}
         {{#if (isNotEmpty responseSchema)}}
             {{#with responseSchema.properties.data}}
@@ -40,5 +36,5 @@ type (
 
     {{/each}}
 )
-
+{{/if}}
 {{/each}}
