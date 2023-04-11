@@ -20,8 +20,6 @@ type (
         {{~#if (isAllTrue (isNotEmpty injectedSchema) hasInjectedInput)}}
     {{> struct_definition mergeType=true requiredKeys=injectedSchema.required schemaData=injectedSchema.properties parentName=(fmtSprintf 'Injected%sInput' name)}}
         {{/if}}
-    {{/equal}}
-    {{#equal engine 0}}
         {{#if (isNotEmpty responseSchema)}}
             {{#with responseSchema.properties.data}}
     {{> struct_definition mergeType=true requiredKeys=required schemaData=properties parentName=(fmtSprintf '%sResponseData' name)}}
