@@ -1,16 +1,14 @@
 {{#each schemaData as |schema name|~}}
     {{#equal (realType schema.type) 'object'}}
         {{#with (fmtSprintf '%s_%s' (upperFirst parentName) (upperFirst name))}}
-            {{logger (putSubSchema subSchemaMap this schema.properties requiredKeys)}}
-            {{> struct_recursion requiredKeys=requiredKeys schemaData=schema.properties parentName=this}}
+            {{> struct_recursion requiredKeys=requiredKeys schemaData=schema.properties parentName=this ignore=(putSubSchema subSchemaMap this schema.properties requiredKeys)}}
         {{/with}}
     {{/equal}}
     {{~#equal (realType schema.type) 'array'}}
         {{#with schema.items}}
             {{#if properties~}}
                 {{#with (fmtSprintf '%s_%s' (upperFirst parentName) (upperFirst name))}}
-                    {{logger (putSubSchema subSchemaMap this properties requiredKeys)}}
-                    {{> struct_recursion requiredKeys=requiredKeys schemaData=properties parentName=this}}
+                    {{> struct_recursion requiredKeys=requiredKeys schemaData=properties parentName=this ignore=(putSubSchema subSchemaMap this properties requiredKeys)}}
                 {{/with~}}
             {{/if~}}
         {{/with}}

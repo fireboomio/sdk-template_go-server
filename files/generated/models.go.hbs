@@ -6,6 +6,8 @@ type (
 	{{#if (isNotEmpty inputSchema)}}
 		{{#if hasInput}}
     {{> struct_definition mergeType=true requiredKeys=inputSchema.required schemaData=inputSchema.properties parentName=(fmtSprintf '%sInput' name)}}
+        {{else}}
+    {{fmtSprintf '%sInput' name}} = any
         {{/if}}
         {{#if hasInternalInput}}
     {{> struct_definition mergeType=true requiredKeys=internalSchema.required schemaData=internalSchema.properties parentName=(fmtSprintf 'Internal%sInput' name)}}
