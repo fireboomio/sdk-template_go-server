@@ -2,7 +2,8 @@
   "name": "go-server",
   "author": "fireboom",
   "version": "0.1.0",
-  "type": "hook",
+  "type": "server",
+  "hookLanguage": "go",
   "description": "这里是sdk的描述",
   "outputPath": "./custom-go",
   "enabled": true
