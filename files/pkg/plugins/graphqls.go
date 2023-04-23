@@ -7,6 +7,7 @@ import (
 	"github.com/graphql-go/graphql"
 	"github.com/graphql-go/graphql/gqlerrors"
 	"github.com/labstack/echo/v4"
+	sse "github.com/r3labs/sse/v2"
 	"net/http"
 	"os"
 )
@@ -72,11 +73,42 @@ func RegisterGraphql(e *echo.Echo, gqlServer GraphQLServerConfig) {
 				Context:        c.Request().Context(),
 				User:           brc.User,
 				InternalClient: brc.InternalClient,
+				Logger:         brc.Logger(),
 			},
 		}
 		result := graphql.Do(param)
+		if rc, ok := result.Data.(chan []byte); ok {
+			return handleSSE(c, rc)
+		}
 		return c.JSON(http.StatusOK, result)
 	})
+}
+
+func handleSSE(c echo.Context, rc chan []byte) error {
+	stream := sse.New()
+
+	// 定义 SSE 事件回调函数，每秒钟发送一个 SSE 事件
+	go func() {
+		for {
+			select {
+			case result := <-rc:
+				event := &sse.Event{
+					Data: result,
+				}
+				stream.Publish("", event)
+			case <-c.Request().Context().Done():
+				return
+			}
+		}
+	}()
+
+	// 设置 SSE 响应头
+	c.Response().Header().Set(echo.HeaderContentType, "text/event-stream")
+	c.Response().WriteHeader(http.StatusOK)
+
+	// 将 SSE 事件流附加到响应体中
+	stream.ServeHTTP(c.Response(), c.Request())
+	return nil
 }
 
 func buildEchoGraphqlError(c echo.Context, err error) error {

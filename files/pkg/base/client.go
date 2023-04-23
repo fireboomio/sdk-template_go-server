@@ -49,6 +49,7 @@ type GraphqlRequestContext struct {
 	context.Context
 	User           *WunderGraphUser[string]
 	InternalClient *InternalClient
+	Logger         echo.Logger
 }
 
 type BaseRequestContext struct {
