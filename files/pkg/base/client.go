@@ -50,6 +50,13 @@ type GraphqlRequestContext struct {
 	User           *WunderGraphUser[string]
 	InternalClient *InternalClient
 	Logger         echo.Logger
+	Result         *ResultChan
+}
+
+type ResultChan struct {
+	Data  chan []byte
+	Error chan []byte
+	Done  chan []byte
 }
 
 type BaseRequestContext struct {
