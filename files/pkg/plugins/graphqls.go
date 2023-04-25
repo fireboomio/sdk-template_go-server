@@ -178,8 +178,17 @@ func GetGraphqlContext(params graphql.ResolveParams) *base.GraphqlRequestContext
 	return params.Context.(*base.GraphqlRequestContext)
 }
 
-func HandleSSEReader(eventStream io.ReadCloser, sseChan *base.ResultChan, handle func([]byte) []byte) {
-	if sseChan == nil || sseChan.Data == nil || sseChan.Error == nil || sseChan.Done == nil {
+func ResolveParamsToStruct(params graphql.ResolveParams, input any) error {
+	argsBytes, err := json.Marshal(params.Args)
+	if err != nil {
+		return err
+	}
+
+	return json.Unmarshal(argsBytes, &input)
+}
+
+func HandleSSEReader(eventStream io.ReadCloser, sseChan *base.ResultChan, handle func([]byte) ([]byte, bool)) {
+	if sseChan == nil || sseChan.Data == nil || sseChan.Error == nil {
 		return
 	}
 
@@ -212,16 +221,15 @@ func HandleSSEReader(eventStream io.ReadCloser, sseChan *base.ResultChan, handle
 					continue
 				}
 
-				if string(data) == "[DONE]" {
-					sseChan.Done <- data
-					return
-				}
-
 				if nil != handle {
-					data = handle(data)
-					if len(data) == 0 {
+					afterData, done := handle(data)
+					if done {
+						return
+					}
+					if len(afterData) == 0 {
 						continue
 					}
+					data = afterData
 				}
 				sseChan.Data <- data
 			case bytes.HasPrefix(line, headerEvent):
