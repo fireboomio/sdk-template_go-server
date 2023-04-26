@@ -16,7 +16,7 @@
             {{/if~}}
         {{/with}}
     {{/equal~}}
-    {{~#if (isAnyTrue (equalAny (realType schema.type) 'string,number,integer,boolean') (isNotEmpty schema.ref))}}
+    {{~#if (isAnyTrue (equalAny (realType schema.type) ',string,number,integer,boolean') (isNotEmpty schema.ref))}}
     {{> struct_property ref=schema.ref maxLength=(getMaxLength maxLengthMap parentName schemaData) isRequired=(stringInArray name requiredKeys) name=name type=schema.type}}
     {{~/if}}
 {{/each}}
