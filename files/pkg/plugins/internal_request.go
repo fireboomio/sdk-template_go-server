@@ -5,8 +5,10 @@ import (
 	"custom-go/pkg/base"
 	"custom-go/pkg/utils"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"github.com/labstack/echo/v4"
+	"io"
 	"net/http"
 )
 
@@ -50,6 +52,11 @@ func internalRequest(url string, clientCtx *base.InternalClientRequestContext, o
 	}
 
 	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		bodyBytes, _ := io.ReadAll(resp.Body)
+		return nil, errors.New(fmt.Sprintf("server returned a non-200 status: %s, body: %s", resp.Status, string(bodyBytes)))
+	}
 
 	var res base.OperationBodyResponse[any]
 	err = json.NewDecoder(resp.Body).Decode(&res)
