@@ -5,6 +5,7 @@ import (
 	"github.com/tidwall/gjson"
 	"os"
 	"regexp"
+	"time"
 )
 
 func GetConfigurationVal(val *wgpb.ConfigurationVariable) (result string) {
@@ -33,5 +34,8 @@ func ReplacePlaceholder(jsonStr, str string) string {
 	return placeholderRegexp.ReplaceAllStringFunc(str, func(s string) string {
 		return gjson.Get(jsonStr, s[2:len(s)-1]).Str
 	})
+}
 
+func CurrentDateTime() string {
+	return time.Now().Format("2006-01-02T15:04:05Z07:00")
 }
