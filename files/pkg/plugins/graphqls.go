@@ -187,10 +187,13 @@ func ResolveParamsToStruct(params graphql.ResolveParams, input any) error {
 	return json.Unmarshal(argsBytes, &input)
 }
 
-func HandleSSEReader(eventStream io.ReadCloser, sseChan *base.ResultChan, handle func([]byte) ([]byte, bool)) {
-	if sseChan == nil || sseChan.Data == nil || sseChan.Error == nil {
-		return
+func HandleSSEReader(eventStream io.ReadCloser, grc *base.GraphqlRequestContext, handle func([]byte) ([]byte, bool)) {
+	grc.Result = &base.ResultChan{
+		Data:  make(chan []byte),
+		Error: make(chan []byte),
+		Done:  make(chan []byte),
 	}
+	sseChan := grc.Result
 
 	defer eventStream.Close()
 	reader := sse.NewEventStreamReader(eventStream, math.MaxInt)
