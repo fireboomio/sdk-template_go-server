@@ -5,16 +5,17 @@ import (
 	"custom-go/pkg/base"
 	"encoding/json"
 	"fmt"
+	"io"
+	"math"
+	"net/http"
+	"os"
+
 	"github.com/buger/jsonparser"
 	graphql "github.com/graphql-go/graphql"
 	"github.com/graphql-go/graphql/gqlerrors"
 	"github.com/labstack/echo/v4"
 	"github.com/r3labs/sse/v2"
 	"github.com/wundergraph/graphql-go-tools/pkg/pool"
-	"io"
-	"math"
-	"net/http"
-	"os"
 )
 
 var (
