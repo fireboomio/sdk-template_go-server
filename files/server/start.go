@@ -21,7 +21,6 @@ import (
 // Execute adds all child commands to the root command and sets flags appropriately.
 // This is called by main.main(). It only needs to happen once to the rootCmd.
 func Execute() {
-	types.ParseConfig()
 	if err := startServer(); err != nil {
 		os.Exit(1)
 	}
@@ -79,6 +78,13 @@ func configureWunderGraphServer() *echo.Echo {
 				return err
 			}
 
+			if body.Wg.ClientRequest == nil {
+				body.Wg.ClientRequest = &base.ClientRequest{
+					Method:     c.Request().Method,
+					RequestURI: c.Request().RequestURI,
+					Headers:    map[string]string{},
+				}
+			}
 			reqId := c.Request().Header.Get("x-request-id")
 			internalClient := base.InternalClientFactoryCall(map[string]string{"x-request-id": reqId}, body.Wg.ClientRequest)
 			internalClient.Queries = internalQueries

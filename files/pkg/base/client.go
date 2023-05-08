@@ -3,6 +3,7 @@ package base
 import (
 	"context"
 	"github.com/labstack/echo/v4"
+	"net/http"
 )
 
 type (
@@ -51,6 +52,7 @@ type GraphqlRequestContext struct {
 	InternalClient *InternalClient
 	Logger         echo.Logger
 	Result         *ResultChan
+	Request        *http.Request
 }
 
 type ResultChan struct {

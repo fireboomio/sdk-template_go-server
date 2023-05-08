@@ -3,8 +3,10 @@ package plugins
 import (
 	"bytes"
 	"custom-go/pkg/base"
+	"custom-go/pkg/utils"
 	"encoding/json"
 	"fmt"
+	"github.com/graphql-go/graphql/language/ast"
 	"io"
 	"math"
 	"net/http"
@@ -84,19 +86,15 @@ func RegisterGraphql(e *echo.Echo, gqlServer GraphQLServerConfig) {
 	})))
 
 	e.POST(routeUrl, func(c echo.Context) error {
-		bodyBytes, err := io.ReadAll(c.Request().Body)
-		if err != nil {
-			return buildEchoGraphqlError(c, err)
-		}
-
 		var body graphqlBody
-		err = json.Unmarshal(bodyBytes, &body)
+		err := utils.CopyAndBindRequestBody(c.Request(), &body)
 		if err != nil {
 			return buildEchoGraphqlError(c, err)
 		}
 
 		brc := c.(*base.BaseRequestContext)
 		grc := &base.GraphqlRequestContext{
+			Request:        c.Request(),
 			Context:        c.Request().Context(),
 			User:           brc.User,
 			InternalClient: brc.InternalClient,
@@ -177,6 +175,12 @@ func buildEchoGraphqlError(c echo.Context, err error) error {
 
 func GetGraphqlContext(params graphql.ResolveParams) *base.GraphqlRequestContext {
 	return params.Context.(*base.GraphqlRequestContext)
+}
+
+func ResolveArgs[T any](params graphql.ResolveParams) (grc *base.GraphqlRequestContext, args *T, err error) {
+	grc = GetGraphqlContext(params)
+	err = ResolveParamsToStruct(params, &args)
+	return
 }
 
 func ResolveParamsToStruct(params graphql.ResolveParams, input any) error {
@@ -344,4 +348,46 @@ func writeSafe(err error, writer io.Writer, data []byte) error {
 	}
 	_, err = writer.Write(data)
 	return err
+}
+
+func BuildStructScalar[T any]() *graphql.Scalar {
+	return graphql.NewScalar(graphql.ScalarConfig{
+		Name:        "UnifiedOrderResponse",
+		Description: "The `UnifiedOrderResponse` scalar type represents UnifiedOrderResponse.",
+		Serialize: func(value interface{}) interface{} {
+			if v, ok := value.(*T); ok {
+				if v == nil {
+					return nil
+				}
+				return *v
+			}
+			return value
+		},
+		ParseValue: func(value interface{}) interface{} {
+			deserializeFn := func(data []byte) (response T) {
+				_ = json.Unmarshal(data, &response)
+				return
+			}
+			switch value := value.(type) {
+			case []byte:
+				return deserializeFn(value)
+			case string:
+				return deserializeFn([]byte(value))
+			case *string:
+				if value == nil {
+					return nil
+				}
+				return deserializeFn([]byte(*value))
+			default:
+				return nil
+			}
+		},
+		ParseLiteral: func(valueAST ast.Value) interface{} {
+			switch valueAST := valueAST.(type) {
+			case *ast.ObjectValue:
+				return valueAST.GetValue()
+			}
+			return nil
+		},
+	})
 }
