@@ -9,7 +9,7 @@ import (
 var WdgGraphConfig WunderGraphConfiguration
 var configJsonPath = filepath.Join("generated", "fireboom.config.json")
 
-func init() {
+func ParseConfig() {
 	_ = utils.ReadStructAndCacheFile(configJsonPath, &WdgGraphConfig)
 }
 

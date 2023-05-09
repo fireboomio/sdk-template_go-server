@@ -3,10 +3,8 @@ package plugins
 import (
 	"bytes"
 	"custom-go/pkg/base"
-	"custom-go/pkg/utils"
 	"encoding/json"
 	"fmt"
-	"github.com/graphql-go/graphql/language/ast"
 	"io"
 	"math"
 	"net/http"
@@ -86,15 +84,19 @@ func RegisterGraphql(e *echo.Echo, gqlServer GraphQLServerConfig) {
 	})))
 
 	e.POST(routeUrl, func(c echo.Context) error {
+		bodyBytes, err := io.ReadAll(c.Request().Body)
+		if err != nil {
+			return buildEchoGraphqlError(c, err)
+		}
+
 		var body graphqlBody
-		err := utils.CopyAndBindRequestBody(c.Request(), &body)
+		err = json.Unmarshal(bodyBytes, &body)
 		if err != nil {
 			return buildEchoGraphqlError(c, err)
 		}
 
 		brc := c.(*base.BaseRequestContext)
 		grc := &base.GraphqlRequestContext{
-			Request:        c.Request(),
 			Context:        c.Request().Context(),
 			User:           brc.User,
 			InternalClient: brc.InternalClient,
@@ -177,12 +179,6 @@ func GetGraphqlContext(params graphql.ResolveParams) *base.GraphqlRequestContext
 	return params.Context.(*base.GraphqlRequestContext)
 }
 
-func ResolveArgs[T any](params graphql.ResolveParams) (grc *base.GraphqlRequestContext, args *T, err error) {
-	grc = GetGraphqlContext(params)
-	err = ResolveParamsToStruct(params, &args)
-	return
-}
-
 func ResolveParamsToStruct(params graphql.ResolveParams, input any) error {
 	argsBytes, err := json.Marshal(params.Args)
 	if err != nil {
@@ -200,104 +196,102 @@ func HandleSSEReader(eventStream io.ReadCloser, grc *base.GraphqlRequestContext,
 	}
 	sseChan := grc.Result
 
-	go func() {
-		defer eventStream.Close()
-		reader := sse.NewEventStreamReader(eventStream, math.MaxInt)
-		for {
-			msg, err := reader.ReadEvent()
-			if err != nil {
-				if err == io.EOF {
-					return
-				}
-
-				sseChan.Error <- []byte(internalError)
+	defer eventStream.Close()
+	reader := sse.NewEventStreamReader(eventStream, math.MaxInt)
+	for {
+		msg, err := reader.ReadEvent()
+		if err != nil {
+			if err == io.EOF {
 				return
 			}
 
-			if len(msg) == 0 {
-				continue
-			}
+			sseChan.Error <- []byte(internalError)
+			return
+		}
 
-			// normalize the crlf to lf to make it easier to split the lines.
-			// split the line by "\n" or "\r", per the spec.
-			lines := bytes.FieldsFunc(msg, func(r rune) bool { return r == '\n' || r == '\r' })
-			for _, line := range lines {
-				switch {
-				case bytes.HasPrefix(line, headerData):
-					data := trim(line[len(headerData):])
+		if len(msg) == 0 {
+			continue
+		}
 
-					if len(data) == 0 {
-						continue
-					}
+		// normalize the crlf to lf to make it easier to split the lines.
+		// split the line by "\n" or "\r", per the spec.
+		lines := bytes.FieldsFunc(msg, func(r rune) bool { return r == '\n' || r == '\r' })
+		for _, line := range lines {
+			switch {
+			case bytes.HasPrefix(line, headerData):
+				data := trim(line[len(headerData):])
 
-					if nil != handle {
-						afterData, done := handle(data)
-						if done {
-							return
-						}
-						if len(afterData) == 0 {
-							continue
-						}
-						data = afterData
-					}
-					sseChan.Data <- data
-				case bytes.HasPrefix(line, headerEvent):
-					event := trim(line[len(headerEvent):])
-
-					switch {
-					case bytes.Equal(event, eventTypeComplete):
-						return
-					case bytes.Equal(event, eventTypeNext):
-						continue
-					}
-				case bytes.HasPrefix(msg, []byte(":")):
-					// according to the spec, we ignore messages starting with a colon
+				if len(data) == 0 {
 					continue
-				default:
-					// ideally we should not get here, or if we do, we should ignore it
-					// but some providers send a json object with the error messages, without the event header
+				}
 
-					// check for errors which came without event header
-					data := trim(line)
-
-					val, valueType, _, err := jsonparser.Get(data, "errors")
-					switch err {
-					case jsonparser.KeyPathNotFoundError:
+				if nil != handle {
+					afterData, done := handle(data)
+					if done {
+						return
+					}
+					if len(afterData) == 0 {
 						continue
-					case jsonparser.MalformedJsonError:
-						// ignore garbage
-						continue
-					case nil:
-						if valueType == jsonparser.Array {
-							response := []byte(`{}`)
-							response, err = jsonparser.Set(response, val, "errors")
-							if err != nil {
-								sseChan.Error <- []byte(err.Error())
-								return
-							}
+					}
+					data = afterData
+				}
+				sseChan.Data <- data
+			case bytes.HasPrefix(line, headerEvent):
+				event := trim(line[len(headerEvent):])
 
-							sseChan.Error <- response
-							return
-						} else if valueType == jsonparser.Object {
-							response := []byte(`{"errors":[]}`)
-							response, err = jsonparser.Set(response, val, "errors", "[0]")
-							if err != nil {
-								sseChan.Error <- []byte(err.Error())
-								return
-							}
+				switch {
+				case bytes.Equal(event, eventTypeComplete):
+					return
+				case bytes.Equal(event, eventTypeNext):
+					continue
+				}
+			case bytes.HasPrefix(msg, []byte(":")):
+				// according to the spec, we ignore messages starting with a colon
+				continue
+			default:
+				// ideally we should not get here, or if we do, we should ignore it
+				// but some providers send a json object with the error messages, without the event header
 
-							sseChan.Error <- response
+				// check for errors which came without event header
+				data := trim(line)
+
+				val, valueType, _, err := jsonparser.Get(data, "errors")
+				switch err {
+				case jsonparser.KeyPathNotFoundError:
+					continue
+				case jsonparser.MalformedJsonError:
+					// ignore garbage
+					continue
+				case nil:
+					if valueType == jsonparser.Array {
+						response := []byte(`{}`)
+						response, err = jsonparser.Set(response, val, "errors")
+						if err != nil {
+							sseChan.Error <- []byte(err.Error())
 							return
 						}
 
-					default:
-						sseChan.Error <- []byte(internalError)
+						sseChan.Error <- response
+						return
+					} else if valueType == jsonparser.Object {
+						response := []byte(`{"errors":[]}`)
+						response, err = jsonparser.Set(response, val, "errors", "[0]")
+						if err != nil {
+							sseChan.Error <- []byte(err.Error())
+							return
+						}
+
+						sseChan.Error <- response
 						return
 					}
+
+				default:
+					sseChan.Error <- []byte(internalError)
+					return
 				}
 			}
 		}
-	}()
+	}
 }
 
 func trim(data []byte) []byte {
@@ -348,46 +342,4 @@ func writeSafe(err error, writer io.Writer, data []byte) error {
 	}
 	_, err = writer.Write(data)
 	return err
-}
-
-func BuildStructScalar[T any]() *graphql.Scalar {
-	return graphql.NewScalar(graphql.ScalarConfig{
-		Name:        "UnifiedOrderResponse",
-		Description: "The `UnifiedOrderResponse` scalar type represents UnifiedOrderResponse.",
-		Serialize: func(value interface{}) interface{} {
-			if v, ok := value.(*T); ok {
-				if v == nil {
-					return nil
-				}
-				return *v
-			}
-			return value
-		},
-		ParseValue: func(value interface{}) interface{} {
-			deserializeFn := func(data []byte) (response T) {
-				_ = json.Unmarshal(data, &response)
-				return
-			}
-			switch value := value.(type) {
-			case []byte:
-				return deserializeFn(value)
-			case string:
-				return deserializeFn([]byte(value))
-			case *string:
-				if value == nil {
-					return nil
-				}
-				return deserializeFn([]byte(*value))
-			default:
-				return nil
-			}
-		},
-		ParseLiteral: func(valueAST ast.Value) interface{} {
-			switch valueAST := valueAST.(type) {
-			case *ast.ObjectValue:
-				return valueAST.GetValue()
-			}
-			return nil
-		},
-	})
 }

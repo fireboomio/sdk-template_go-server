@@ -6,8 +6,6 @@ type (
 	{{#if (isNotEmpty inputSchema)}}
 		{{#if hasInput}}
     {{> struct_definition mergeType=true requiredKeys=inputSchema.required schemaData=inputSchema.properties parentName=(fmtSprintf '%sInput' name)}}
-        {{else}}
-    {{fmtSprintf '%sInput' name}} = any
         {{/if}}
         {{#if hasInternalInput}}
     {{> struct_definition mergeType=true requiredKeys=internalSchema.required schemaData=internalSchema.properties parentName=(fmtSprintf 'Internal%sInput' name)}}
@@ -21,6 +19,8 @@ type (
     {{~#equal engine 0}}
         {{~#if (isAllTrue (isNotEmpty injectedSchema) hasInjectedInput)}}
     {{> struct_definition mergeType=true requiredKeys=injectedSchema.required schemaData=injectedSchema.properties parentName=(fmtSprintf 'Injected%sInput' name)}}
+        {{else}}
+    {{fmtSprintf 'Injected%sInput' name}} = any
         {{/if}}
         {{#if (isNotEmpty responseSchema)}}
             {{#with responseSchema.properties.data}}
