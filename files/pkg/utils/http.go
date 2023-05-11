@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"io"
+	"net"
 	"net/http"
 	"net/http/httputil"
 )
@@ -26,4 +27,20 @@ func CopyAndBindRequestBody(request *http.Request, result any) (err error) {
 	}
 
 	return json.Unmarshal(bodyBytes, &result)
+}
+
+func GetIp4() (ip string, err error) {
+	addrs, err := net.InterfaceAddrs()
+	if err != nil {
+		return
+	}
+	for _, addr := range addrs {
+		if ipNet, ok := addr.(*net.IPNet); ok && !ipNet.IP.IsLoopback() {
+			if ipNet.IP.To4() != nil {
+				ip = ipNet.IP.String()
+				break
+			}
+		}
+	}
+	return
 }

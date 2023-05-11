@@ -3,6 +3,7 @@ package base
 import (
 	"context"
 	"github.com/labstack/echo/v4"
+	"net/http"
 )
 
 type (
@@ -19,11 +20,12 @@ type InternalRequestFunction func(*InternalClientRequestContext, OperationArgsWi
 
 type InternalClientFactory func(map[string]string, ClientRequest) *InternalClient
 
-func InternalClientFactoryCall(headers map[string]string, clientRequest *ClientRequest) *InternalClient {
+func InternalClientFactoryCall(headers map[string]string, clientRequest *ClientRequest, user *WunderGraphUser[string]) *InternalClient {
 	client := &InternalClient{
 		Context: &InternalClientRequestContext{
 			ExtraHeaders:  headers,
 			ClientRequest: clientRequest,
+			User:          user,
 		},
 	}
 	client.WithHeaders = func(headers map[string]string) *InternalClient {
@@ -36,6 +38,7 @@ func InternalClientFactoryCall(headers map[string]string, clientRequest *ClientR
 type InternalClientRequestContext struct {
 	ExtraHeaders  map[string]string
 	ClientRequest *ClientRequest
+	User          *WunderGraphUser[string]
 }
 
 type InternalClient struct {
@@ -51,6 +54,7 @@ type GraphqlRequestContext struct {
 	InternalClient *InternalClient
 	Logger         echo.Logger
 	Result         *ResultChan
+	Request        *http.Request
 }
 
 type ResultChan struct {
