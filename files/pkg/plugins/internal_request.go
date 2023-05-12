@@ -28,7 +28,12 @@ func internalRequest(url string, clientCtx *base.InternalClientRequestContext, o
 	jsonData, err := json.Marshal(map[string]interface{}{
 		"input": options.Input,
 		"__wg": map[string]interface{}{
-			"clientRequest": clientCtx.ClientRequest,
+			"clientRequest": &base.ClientRequest{
+				RequestURI: url,
+				Method:     "POST",
+				Headers:    clientCtx.ClientRequest.Headers,
+			},
+			"user": clientCtx.User,
 		},
 	})
 	if err != nil {
