@@ -350,10 +350,10 @@ func writeSafe(err error, writer io.Writer, data []byte) error {
 	return err
 }
 
-func BuildStructScalar[T any]() *graphql.Scalar {
+func BuildStructScalar[T any](name string) *graphql.Scalar {
 	return graphql.NewScalar(graphql.ScalarConfig{
-		Name:        "UnifiedOrderResponse",
-		Description: "The `UnifiedOrderResponse` scalar type represents UnifiedOrderResponse.",
+		Name:        name,
+		Description: fmt.Sprintf("The `%s` scalar type represents %s.", name, name),
 		Serialize: func(value interface{}) interface{} {
 			if v, ok := value.(*T); ok {
 				if v == nil {
