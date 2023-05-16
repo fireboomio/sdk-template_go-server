@@ -34,7 +34,11 @@ var placeholderRegexp = regexp.MustCompile(`\${([^}]+)}`)
 
 func ReplacePlaceholder(jsonStr, str string) string {
 	return placeholderRegexp.ReplaceAllStringFunc(str, func(s string) string {
-		return gjson.Get(jsonStr, s[2:len(s)-1]).Str
+		if getValue := gjson.Get(jsonStr, s[2:len(s)-1]); getValue.Exists() {
+			return getValue.String()
+		}
+
+		return s
 	})
 }
 
