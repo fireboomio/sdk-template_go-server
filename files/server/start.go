@@ -66,6 +66,10 @@ func configureWunderGraphServer() *echo.Echo {
 		e.Logger.Debugf(`Registered (%d) subscription operations`, subscriptionLen)
 	}
 
+	for _, registeredHook := range base.GetRegisteredHookArr() {
+		registeredHook(internalQueries, internalMutations)
+	}
+
 	e.Use(func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
 			if c.Request().Method == http.MethodGet {

@@ -76,3 +76,15 @@ type WsTransportHookRequest = BaseRequestContext
 
 type PreUploadHookRequest = BaseRequestContext
 type PostUploadHookRequest = BaseRequestContext
+
+type registeredHook func(OperationDefinitions, OperationDefinitions)
+
+var registeredHookArr []registeredHook
+
+func GetRegisteredHookArr() []registeredHook {
+	return registeredHookArr
+}
+
+func AddRegisteredHook(hook registeredHook) {
+	registeredHookArr = append(registeredHookArr, hook)
+}
