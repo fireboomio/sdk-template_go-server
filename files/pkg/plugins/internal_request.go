@@ -60,7 +60,7 @@ func internalRequest(url string, clientCtx *base.InternalClientRequestContext, o
 
 	if resp.StatusCode != http.StatusOK {
 		bodyBytes, _ := io.ReadAll(resp.Body)
-		return nil, errors.New(fmt.Sprintf("server returned a non-200 status: %s, body: %s", resp.Status, string(bodyBytes)))
+		return nil, errors.New(string(bodyBytes))
 	}
 
 	var res base.OperationBodyResponse[any]
@@ -70,7 +70,7 @@ func internalRequest(url string, clientCtx *base.InternalClientRequestContext, o
 	}
 
 	if len(res.Errors) > 0 {
-		return nil, fmt.Errorf("error request, url: %s statusCode: %d, errors: %s", url, resp.StatusCode, res.Errors[0].Message)
+		return nil, errors.New(res.Errors[0].Message)
 	}
 
 	return res.Data, nil
