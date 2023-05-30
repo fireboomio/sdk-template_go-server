@@ -8,7 +8,7 @@ import (
         {{/if}}
     {{/equal}}
     {{~#equal hookType "Global"}}
-        {{#if (isAnyTrue (isNotEmpty hookConf.httpTransport.onOriginRequest.tsPath) (isNotEmpty hookConf.httpTransport.onOriginResponse.tsPath) (isNotEmpty hookConf.wsTransport.onConnectionInit.tsPath))}}
+        {{#if (isAnyTrue (isNotEmpty hookConf.httpTransport.beforeOriginRequest.tsPath) (isNotEmpty hookConf.httpTransport.onOriginRequest.tsPath) (isNotEmpty hookConf.httpTransport.onOriginResponse.tsPath) (isNotEmpty hookConf.wsTransport.onConnectionInit.tsPath))}}
     "custom-go/global"
         {{/if}}
     {{/equal}}
