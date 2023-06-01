@@ -151,9 +151,9 @@ func handleSSE(c *base.BaseRequestContext, sseChan *base.ResultChan) error {
 				continue
 			}
 
-			errString, _ := sjson.Set("{}", "message", string(errBytes))
 			buf := pool.BytesBuffer.Get()
 			buf.Reset()
+			errString, _ := sjson.Set("{}", "message", string(errBytes))
 			_ = writeGraphqlResponse(nil, []byte(errString), buf)
 			_, _ = fmt.Fprintf(c.Response().Writer, "errors: %s\n\n", buf.String())
 			flusher.Flush()

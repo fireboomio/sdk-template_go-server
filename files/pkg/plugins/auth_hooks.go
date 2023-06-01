@@ -2,10 +2,12 @@ package plugins
 
 import (
 	"custom-go/pkg/base"
+	"encoding/base64"
 	"errors"
 	"github.com/labstack/echo/v4"
 	"net/http"
 	"path"
+	"strings"
 )
 
 type AuthenticationResponse struct {
@@ -19,6 +21,18 @@ type AuthenticationConfiguration struct {
 	MutatingPostAuthentication func(hook *base.AuthenticationHookRequest) (*AuthenticationResponse, error)
 	Revalidate                 func(hook *base.AuthenticationHookRequest) (*AuthenticationResponse, error)
 	PostLogout                 func(hook *base.AuthenticationHookRequest) error
+}
+
+func TryParseJWT(token string) []byte {
+	parts := strings.Split(token, ".")
+	if len(parts) != 3 {
+		return nil
+	}
+	payload, err := base64.RawURLEncoding.DecodeString(parts[1])
+	if err != nil {
+		return nil
+	}
+	return payload
 }
 
 func RegisterAuthHooks(e *echo.Echo, authHooks AuthenticationConfiguration) {
