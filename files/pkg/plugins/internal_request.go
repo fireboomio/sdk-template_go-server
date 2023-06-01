@@ -18,13 +18,13 @@ func BuildInternalRequest(logger echo.Logger, baseNodeUrl string, operationName 
 		url := fmt.Sprintf("%s/internal/operations/%s", baseNodeUrl, name)
 		logger.Debugf(`Built internalRequest (%s)`, url)
 		result[base.OperationPath(name)] = func(ctx *base.InternalClientRequestContext, options base.OperationArgsWithInput[any]) (any, error) {
-			return internalRequest(url, ctx, options)
+			return internalRequest(logger, url, ctx, options)
 		}
 	}
 	return result
 }
 
-func internalRequest(url string, clientCtx *base.InternalClientRequestContext, options base.OperationArgsWithInput[any]) (any, error) {
+func internalRequest(logger echo.Logger, url string, clientCtx *base.InternalClientRequestContext, options base.OperationArgsWithInput[any]) (any, error) {
 	jsonData, err := json.Marshal(map[string]interface{}{
 		"input": options.Input,
 		"__wg": map[string]interface{}{
@@ -40,6 +40,7 @@ func internalRequest(url string, clientCtx *base.InternalClientRequestContext, o
 		return nil, err
 	}
 
+	logger.Infof("internalRequest with jsonData [%s]", string(jsonData))
 	req, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonData))
 	if err != nil {
 		return nil, err

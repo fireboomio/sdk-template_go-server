@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/graphql-go/graphql/language/ast"
+	"github.com/tidwall/sjson"
 	"io"
 	"math"
 	"net/http"
@@ -145,14 +146,15 @@ func handleSSE(c *base.BaseRequestContext, sseChan *base.ResultChan) error {
 			_ = writeGraphqlResponse(result, nil, buf)
 			_, _ = fmt.Fprintf(c.Response().Writer, "data: %s\n\n", buf.String())
 			flusher.Flush()
-		case err := <-sseChan.Error:
-			if err == nil {
+		case errBytes := <-sseChan.Error:
+			if errBytes == nil {
 				continue
 			}
 
+			errString, _ := sjson.Set("{}", "message", string(errBytes))
 			buf := pool.BytesBuffer.Get()
 			buf.Reset()
-			_ = writeGraphqlResponse(nil, err, buf)
+			_ = writeGraphqlResponse(nil, []byte(errString), buf)
 			_, _ = fmt.Fprintf(c.Response().Writer, "errors: %s\n\n", buf.String())
 			flusher.Flush()
 			closeFunc()

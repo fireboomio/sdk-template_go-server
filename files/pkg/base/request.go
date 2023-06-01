@@ -1,7 +1,5 @@
 package base
 
-import "encoding/json"
-
 type Record[K comparable, T any] map[K]T
 
 type BaseRequestBody struct {
@@ -17,11 +15,10 @@ type ClientRequest struct {
 	Method     string            `json:"method"`
 	RequestURI string            `json:"requestURI"`
 	Headers    map[string]string `json:"headers"`
-	Body       json.RawMessage   `json:"body"`
+	Body       any               `json:"body"`
 }
 
 type ClientResponse struct {
-	Request    ClientRequest
 	Status     string `json:"status"`
 	StatusCode int    `json:"statusCode"`
 }
