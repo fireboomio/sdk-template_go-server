@@ -18,6 +18,7 @@ type ClientRequest struct {
 	RequestURI string            `json:"requestURI"`
 	Headers    map[string]string `json:"headers"`
 	Body       json.RawMessage   `json:"body"`
+	OriginBody []byte            `json:"originBody"`
 }
 
 type ClientResponse struct {
