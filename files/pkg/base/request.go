@@ -22,7 +22,7 @@ type ClientRequest struct {
 }
 
 type ClientResponse struct {
-	Request    ClientRequest
+	ClientRequest
 	Status     string `json:"status"`
 	StatusCode int    `json:"statusCode"`
 }

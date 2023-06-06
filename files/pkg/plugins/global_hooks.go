@@ -98,7 +98,6 @@ func RegisterGlobalHooks(e *echo.Echo, globalHooks GlobalConfiguration) {
 				return echo.NewHTTPError(http.StatusBadRequest, err.Error())
 			}
 
-			respBody.Response = &base.ClientResponse{StatusCode: http.StatusOK}
 			newResp, err := globalHooks.HttpTransport.OnOriginResponse(brc, &respBody)
 			if err != nil {
 				return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
