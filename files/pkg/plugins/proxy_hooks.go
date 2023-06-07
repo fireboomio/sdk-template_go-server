@@ -5,23 +5,47 @@ import (
 	"github.com/labstack/echo/v4"
 	"net/http"
 	"path"
+	"path/filepath"
+	"runtime"
+	"strings"
 )
 
-type httpProxyHookFunction func(*base.HttpTransportHookRequest, *HttpTransportBody) (*base.ClientResponse, error)
+type (
+	httpProxyHookFunction func(*base.HttpTransportHookRequest, *HttpTransportBody) (*base.ClientResponse, error)
+	httpProxyHook         struct {
+		requiredRoles []string
+		hookFunction  httpProxyHookFunction
+	}
+)
 
-var httpProxyHookMap map[string]httpProxyHookFunction
+var httpProxyHookMap map[string]*httpProxyHook
 
 func init() {
-	httpProxyHookMap = make(map[string]httpProxyHookFunction, 0)
+	httpProxyHookMap = make(map[string]*httpProxyHook, 0)
 }
 
-func AddProxyHook(name string, hookFunc httpProxyHookFunction) {
-	httpProxyHookMap[name] = hookFunc
+func AddProxyHook(hookFunc httpProxyHookFunction, requiredRoles ...string) {
+	_, file, _, ok := runtime.Caller(1)
+	if !ok {
+		return
+	}
+
+	file = filepath.ToSlash(file)
+	_, after, found := strings.Cut(file, "/proxys/")
+	if !found {
+		return
+	}
+
+	after = strings.TrimSuffix(after, ".go")
+	httpProxyHookMap[after] = &httpProxyHook{
+		requiredRoles: requiredRoles,
+		hookFunction:  hookFunc,
+	}
 }
 
 func RegisterProxyHooks(e *echo.Echo) {
 	apiPrefixPath := "/proxy"
-	for name, function := range httpProxyHookMap {
+	for name, proxyHook := range httpProxyHookMap {
 		apiPath := path.Join(apiPrefixPath, name)
 		e.Logger.Debugf(`Registered proxyHook [%s]`, apiPath)
 		e.POST(apiPath, func(c echo.Context) error {
@@ -32,7 +56,7 @@ func RegisterProxyHooks(e *echo.Echo) {
 				return echo.NewHTTPError(http.StatusBadRequest, err.Error())
 			}
 
-			newResp, err := function(brc, &reqBody)
+			newResp, err := proxyHook.hookFunction(brc, &reqBody)
 			if err != nil {
 				return echo.NewHTTPError(http.StatusBadRequest, err.Error())
 			}
