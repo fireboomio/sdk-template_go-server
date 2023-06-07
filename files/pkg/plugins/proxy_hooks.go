@@ -2,7 +2,9 @@ package plugins
 
 import (
 	"custom-go/pkg/base"
+	"fmt"
 	"github.com/labstack/echo/v4"
+	"golang.org/x/exp/slices"
 	"net/http"
 	"path"
 	"path/filepath"
@@ -50,6 +52,23 @@ func RegisterProxyHooks(e *echo.Echo) {
 		e.Logger.Debugf(`Registered proxyHook [%s]`, apiPath)
 		e.POST(apiPath, func(c echo.Context) error {
 			brc := c.(*base.HttpTransportHookRequest)
+			if len(proxyHook.requiredRoles) > 0 {
+				if brc.User == nil {
+					return echo.NewHTTPError(http.StatusUnauthorized)
+				}
+
+				var matchRole bool
+				for _, role := range proxyHook.requiredRoles {
+					if slices.Contains(brc.User.Roles, role) {
+						matchRole = true
+						break
+					}
+				}
+				if !matchRole {
+					return echo.NewHTTPError(http.StatusUnauthorized, fmt.Sprintf("required any role of [%s]", strings.Join(proxyHook.requiredRoles, ",")))
+				}
+			}
+
 			var reqBody HttpTransportBody
 			err := c.Bind(&reqBody)
 			if err != nil {
