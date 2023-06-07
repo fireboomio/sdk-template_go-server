@@ -42,6 +42,7 @@ func configureWunderGraphServer() *echo.Echo {
 	}
 	e.Use(middleware.CORSWithConfig(corsCfg))
 
+	plugins.RegisterProxyHooks(e)
 	plugins.RegisterGlobalHooks(e, types.WdgHooksAndServerConfig.Hooks.Global)
 	plugins.RegisterAuthHooks(e, types.WdgHooksAndServerConfig.Hooks.Authentication)
 	plugins.RegisterUploadsHooks(e, types.WdgHooksAndServerConfig.Hooks.Uploads)

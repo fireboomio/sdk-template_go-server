@@ -36,6 +36,9 @@ import (
     "custom-go/customize"
     {{/if}}
 {{/each}}
+{{#each proxyDirectories}}
+    _ "custom-go/proxys{{#unless (equalAny this "")}}/{{this}}{{/unless}}"
+{{/each}}
 )
 
 func init() {
