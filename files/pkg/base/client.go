@@ -77,7 +77,7 @@ type WsTransportHookRequest = BaseRequestContext
 type PreUploadHookRequest = BaseRequestContext
 type PostUploadHookRequest = BaseRequestContext
 
-type registeredHook func()
+type registeredHook func(echo.Logger)
 
 var registeredHookArr []registeredHook
 

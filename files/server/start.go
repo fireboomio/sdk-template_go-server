@@ -69,7 +69,7 @@ func configureWunderGraphServer() *echo.Echo {
 
 	plugins.BuildDefaultInternalClient(internalQueries, internalMutations)
 	for _, registeredHook := range base.GetRegisteredHookArr() {
-		go registeredHook()
+		go registeredHook(e.Logger)
 	}
 
 	e.Use(func(next echo.HandlerFunc) echo.HandlerFunc {
