@@ -77,7 +77,7 @@ type WsTransportHookRequest = BaseRequestContext
 type PreUploadHookRequest = BaseRequestContext
 type PostUploadHookRequest = BaseRequestContext
 
-type registeredHook func(OperationDefinitions, OperationDefinitions)
+type registeredHook func()
 
 var registeredHookArr []registeredHook
 

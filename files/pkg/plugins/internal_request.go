@@ -12,6 +12,21 @@ import (
 	"net/http"
 )
 
+var DefaultInternalClient *base.InternalClient
+
+func BuildDefaultInternalClient(queries base.OperationDefinitions, mutations base.OperationDefinitions) {
+	DefaultInternalClient = &base.InternalClient{
+		Context: &base.InternalClientRequestContext{
+			ClientRequest: &base.ClientRequest{
+				Headers: map[string]string{},
+			},
+		},
+		Queries:   queries,
+		Mutations: mutations,
+	}
+	return
+}
+
 func BuildInternalRequest(logger echo.Logger, baseNodeUrl string, operationName []string) base.OperationDefinitions {
 	result := make(base.OperationDefinitions, len(operationName))
 	for _, name := range operationName {
