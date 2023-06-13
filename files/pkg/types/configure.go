@@ -3,6 +3,7 @@ package types
 import (
 	"custom-go/pkg/utils"
 	"custom-go/pkg/wgpb"
+	"golang.org/x/exp/slices"
 	"path/filepath"
 )
 
@@ -39,4 +40,14 @@ type OperationStruct struct {
 	Name          string             `json:"name"`
 	Path          string             `json:"path"`
 	OperationType wgpb.OperationType `json:"operationType"`
+}
+
+func GetS3ConfigByName(name string) *wgpb.S3UploadConfiguration {
+	s3Arr := WdgGraphConfig.Api.S3UploadConfiguration
+	if index := slices.IndexFunc(s3Arr, func(s3Config *wgpb.S3UploadConfiguration) bool {
+		return name == s3Config.Name
+	}); index != -1 {
+		return s3Arr[index]
+	}
+	return nil
 }
