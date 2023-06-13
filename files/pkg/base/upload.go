@@ -1,9 +1,10 @@
 package base
 
 type WunderGraphFile struct {
-	Name string `json:"name"`
-	Size int    `json:"size"`
-	Type string `json:"type"`
+	Name     string `json:"name"`
+	Size     int    `json:"size"`
+	Type     string `json:"type"`
+	Provider string `json:"provider"`
 }
 
 type UploadHookResponse struct {
