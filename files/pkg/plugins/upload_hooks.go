@@ -2,6 +2,7 @@ package plugins
 
 import (
 	"custom-go/pkg/base"
+	"custom-go/pkg/utils"
 	"github.com/labstack/echo/v4"
 	"net/http"
 	"path"
@@ -14,10 +15,19 @@ type UploadBody[M any] struct {
 	Meta M                    `json:"meta"`
 }
 
-type uploadFunction func(request *base.PreUploadHookRequest, body *UploadBody[any]) (*base.UploadHookResponse, error)
+type UploadFunction func(request *base.UploadHookRequest, body *UploadBody[any]) (*base.UploadHookResponse, error)
 type UploadHooksProfile struct {
-	PreUpload  uploadFunction
-	PostUpload uploadFunction
+	PreUpload  UploadFunction
+	PostUpload UploadFunction
+}
+
+func ConvertUploadFunc[M any](oldFunc func(*base.UploadHookRequest, *UploadBody[M]) (*base.UploadHookResponse, error)) UploadFunction {
+	return func(hook *base.UploadHookRequest, body *UploadBody[any]) (res *base.UploadHookResponse, err error) {
+		// 将传入的 OperationBody 转换为需要的类型
+		var input = utils.ConvertType[UploadBody[any], UploadBody[M]](body)
+		// 调用旧函数获取结果
+		return oldFunc(hook, input)
+	}
 }
 
 func RegisterUploadsHooks(e *echo.Echo, uploadHooksMap map[string]UploadHooks) {
@@ -33,11 +43,11 @@ func RegisterUploadsHooks(e *echo.Echo, uploadHooksMap map[string]UploadHooks) {
 	}
 }
 
-func preUpload(e *echo.Echo, providerName, profileName string, handler uploadFunction) {
+func preUpload(e *echo.Echo, providerName, profileName string, handler UploadFunction) {
 	apiPath := path.Join("/upload", providerName, profileName, "preUpload")
 	e.Logger.Debugf(`Registered uploadHook [%s]`, apiPath)
 	e.POST(apiPath, func(c echo.Context) error {
-		pur := c.(*base.PreUploadHookRequest)
+		pur := c.(*base.UploadHookRequest)
 		var param UploadBody[any]
 		err := c.Bind(&param)
 		if err != nil {
@@ -57,11 +67,11 @@ func preUpload(e *echo.Echo, providerName, profileName string, handler uploadFun
 	})
 }
 
-func postUpload(e *echo.Echo, providerName, profileName string, handler uploadFunction) {
+func postUpload(e *echo.Echo, providerName, profileName string, handler UploadFunction) {
 	apiPath := path.Join("/upload", providerName, profileName, "postUpload")
 	e.Logger.Debugf(`Registered uploadHook [%s]`, apiPath)
 	e.POST(apiPath, func(c echo.Context) error {
-		pur := c.(*base.PostUploadHookRequest)
+		pur := c.(*base.UploadHookRequest)
 		var param UploadBody[any]
 		err := c.Bind(&param)
 		if err != nil {

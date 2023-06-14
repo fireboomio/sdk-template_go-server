@@ -74,8 +74,7 @@ type HookRequest = BaseRequestContext
 type HttpTransportHookRequest = BaseRequestContext
 type WsTransportHookRequest = BaseRequestContext
 
-type PreUploadHookRequest = BaseRequestContext
-type PostUploadHookRequest = BaseRequestContext
+type UploadHookRequest = BaseRequestContext
 
 type registeredHook func(echo.Logger)
 
