@@ -1,40 +1,31 @@
 package generated
 
-{{#each operations}}
-{{#if (isAnyTrue hasInput hasInternalInput (isNotEmpty inputSchema.definitions) hasInjectedInput (isNotEmpty responseSchema))}}
-type (
-	{{#if (isNotEmpty inputSchema)}}
-		{{#if hasInput}}
-    {{> struct_definition mergeType=true requiredKeys=inputSchema.required schemaData=inputSchema.properties parentName=(fmtSprintf '%sInput' name)}}
-        {{/if}}
-        {{#if hasInternalInput}}
-    {{> struct_definition mergeType=true requiredKeys=internalSchema.required schemaData=internalSchema.properties parentName=(fmtSprintf 'Internal%sInput' name)}}
-        {{/if}}
-        {{#each inputSchema.definitions as |schema name|~}}
-    {{#if (isAbsent onceMap (fmtSprintf 'models_%s' name) schema)}}
-    {{> struct_definition mergeType=true requiredKeys=schema.required schemaData=schema.properties parentName=name}}
-    {{/if}}
-        {{/each}}
-    {{~/if}}
-    {{~#equal engine 0}}
-        {{~#if (isAllTrue (isNotEmpty injectedSchema) hasInjectedInput)}}
-    {{> struct_definition mergeType=true requiredKeys=injectedSchema.required schemaData=injectedSchema.properties parentName=(fmtSprintf 'Injected%sInput' name)}}
-        {{else}}
-    {{fmtSprintf 'Injected%sInput' name}} = any
-        {{/if}}
-        {{#if (isNotEmpty responseSchema)}}
-            {{#with responseSchema.properties.data}}
-    {{> struct_definition mergeType=true requiredKeys=required schemaData=properties parentName=(fmtSprintf '%sResponseData' name)}}
-            {{/with}}
-        {{/if}}
-    {{~/equal~}}
-    {{~#each subSchemaMap as |schema name|~}}
-        {{~> struct_recursion requiredKeys=schema.required schemaData=schema.schema parentName=name~}}
-    {{~/each}}
-    {{~#each subSchemaMap as |schema name|}}
-    {{> struct_definition mergeType=true requiredKeys=schema.required schemaData=schema.schema parentName=name}}
+{{#each objectFieldArray}}
+type {{upperFirst (joinString '_' documentPath)}} struct {
+    {{#each fields}}
+    {{upperFirst (trimPrefix name '_')}} {{#if isArray}}[]{{~/if~}}
+    {{~#if typeRefObject~}}
+        {{#if typeRefObject.isDefinition}}*{{/if}}{{~upperFirst (joinString '_' typeRefObject.documentPath)~}}
+    {{~else~}}
+        {{~#if typeRefEnum~}}
+            {{~upperFirst typeRefEnum.name~}}
+        {{~else~}}
+            {{~#equal typeName 'string'}}string{{/equal~}}
+            {{~#equal typeName 'integer'}}int64{{/equal~}}
+            {{~#equal typeName 'number'}}float64{{/equal~}}
+            {{~#equal typeName 'boolean'}}bool{{/equal~}}
+            {{~#equal typeName 'json'}}any{{/equal~}}
+        {{~/if}}
+    {{~/if}} `json:"{{name}}{{#unless required}},omitempty{{/unless}}"`
+    {{/each}}
+}
+{{/each}}
 
+{{#each enumFieldArray}}
+type {{upperFirst name}} string
+const (
+    {{#each values}}
+    {{upperFirst name}}_{{this}} {{upperFirst name}} = "{{this}}"
     {{/each}}
 )
-{{/if}}
 {{/each}}
