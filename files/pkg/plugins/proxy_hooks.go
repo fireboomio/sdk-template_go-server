@@ -2,9 +2,7 @@ package plugins
 
 import (
 	"custom-go/pkg/base"
-	"fmt"
 	"github.com/labstack/echo/v4"
-	"golang.org/x/exp/slices"
 	"net/http"
 	"path"
 	"path/filepath"
@@ -15,8 +13,8 @@ import (
 type (
 	httpProxyHookFunction func(*base.HttpTransportHookRequest, *HttpTransportBody) (*base.ClientResponse, error)
 	httpProxyHook         struct {
-		requiredRoles []string
-		hookFunction  httpProxyHookFunction
+		rbacEnforcer *RBACEnforcer
+		hookFunction httpProxyHookFunction
 	}
 )
 
@@ -26,7 +24,7 @@ func init() {
 	httpProxyHookMap = make(map[string]*httpProxyHook, 0)
 }
 
-func AddProxyHook(hookFunc httpProxyHookFunction, requiredRoles ...string) {
+func AddProxyHook(hookFunc httpProxyHookFunction, rbacEnforcer *RBACEnforcer) {
 	_, file, _, ok := runtime.Caller(1)
 	if !ok {
 		return
@@ -38,11 +36,104 @@ func AddProxyHook(hookFunc httpProxyHookFunction, requiredRoles ...string) {
 		return
 	}
 
+	if nil == rbacEnforcer {
+		rbacEnforcer = &RBACEnforcer{}
+	}
+
 	after = strings.TrimSuffix(after, ".go")
 	httpProxyHookMap[after] = &httpProxyHook{
-		requiredRoles: requiredRoles,
-		hookFunction:  hookFunc,
+		rbacEnforcer: rbacEnforcer,
+		hookFunction: hookFunc,
 	}
+}
+
+type RBACEnforcer struct {
+	authRequired bool
+
+	requireMatchAll []string
+	requireMatchAny []string
+	denyMatchAll    []string
+	denyMatchAny    []string
+}
+
+func (e *RBACEnforcer) Enforce(r *base.HttpTransportHookRequest) (proceed bool) {
+	if !e.authRequired {
+		return true
+	}
+	user := r.User
+	if user == nil {
+		return false
+	}
+	if ok := e.enforceRequireMatchAll(user); !ok {
+		return false
+	}
+	if ok := e.enforceRequireMatchAny(user); !ok {
+		return false
+	}
+	if ok := e.enforceDenyMatchAll(user); !ok {
+		return false
+	}
+	if ok := e.enforceDenyMatchAny(user); !ok {
+		return false
+	}
+	return true
+}
+
+func (e *RBACEnforcer) enforceRequireMatchAll(user *base.WunderGraphUser[string]) bool {
+	if len(e.requireMatchAll) == 0 {
+		return true
+	}
+	for _, match := range e.requireMatchAll {
+		if contains := e.containsOne(user.Roles, match); !contains {
+			return false
+		}
+	}
+	return true
+}
+
+func (e *RBACEnforcer) enforceRequireMatchAny(user *base.WunderGraphUser[string]) bool {
+	if len(e.requireMatchAny) == 0 {
+		return true
+	}
+	for _, match := range e.requireMatchAny {
+		if contains := e.containsOne(user.Roles, match); contains {
+			return true
+		}
+	}
+	return false
+}
+
+func (e *RBACEnforcer) enforceDenyMatchAll(user *base.WunderGraphUser[string]) bool {
+	if len(e.denyMatchAll) == 0 {
+		return true
+	}
+	for _, match := range e.denyMatchAll {
+		if contains := e.containsOne(user.Roles, match); !contains {
+			return true
+		}
+	}
+	return false
+}
+
+func (e *RBACEnforcer) enforceDenyMatchAny(user *base.WunderGraphUser[string]) bool {
+	if len(e.denyMatchAny) == 0 {
+		return true
+	}
+	for _, match := range e.denyMatchAny {
+		if contains := e.containsOne(user.Roles, match); contains {
+			return false
+		}
+	}
+	return true
+}
+
+func (e *RBACEnforcer) containsOne(slice []string, one string) bool {
+	for i := range slice {
+		if slice[i] == one {
+			return true
+		}
+	}
+	return false
 }
 
 func RegisterProxyHooks(e *echo.Echo) {
@@ -52,21 +143,8 @@ func RegisterProxyHooks(e *echo.Echo) {
 		e.Logger.Debugf(`Registered proxyHook [%s]`, apiPath)
 		e.POST(apiPath, func(c echo.Context) error {
 			brc := c.(*base.HttpTransportHookRequest)
-			if len(proxyHook.requiredRoles) > 0 {
-				if brc.User == nil {
-					return echo.NewHTTPError(http.StatusUnauthorized)
-				}
-
-				var matchRole bool
-				for _, role := range proxyHook.requiredRoles {
-					if slices.Contains(brc.User.Roles, role) {
-						matchRole = true
-						break
-					}
-				}
-				if !matchRole {
-					return echo.NewHTTPError(http.StatusUnauthorized, fmt.Sprintf("required any role of [%s]", strings.Join(proxyHook.requiredRoles, ",")))
-				}
+			if proceed := proxyHook.rbacEnforcer.Enforce(brc); !proceed {
+				return echo.NewHTTPError(http.StatusUnauthorized, "unauthorized")
 			}
 
 			var reqBody HttpTransportBody
