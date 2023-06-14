@@ -48,16 +48,16 @@ func AddProxyHook(hookFunc httpProxyHookFunction, rbacEnforcer *RBACEnforcer) {
 }
 
 type RBACEnforcer struct {
-	authRequired bool
+	AuthRequired bool
 
-	requireMatchAll []string
-	requireMatchAny []string
-	denyMatchAll    []string
-	denyMatchAny    []string
+	RequireMatchAll []string
+	RequireMatchAny []string
+	DenyMatchAll    []string
+	DenyMatchAny    []string
 }
 
 func (e *RBACEnforcer) Enforce(r *base.HttpTransportHookRequest) (proceed bool) {
-	if !e.authRequired {
+	if !e.AuthRequired {
 		return true
 	}
 	user := r.User
@@ -80,10 +80,10 @@ func (e *RBACEnforcer) Enforce(r *base.HttpTransportHookRequest) (proceed bool) 
 }
 
 func (e *RBACEnforcer) enforceRequireMatchAll(user *base.WunderGraphUser[string]) bool {
-	if len(e.requireMatchAll) == 0 {
+	if len(e.RequireMatchAll) == 0 {
 		return true
 	}
-	for _, match := range e.requireMatchAll {
+	for _, match := range e.RequireMatchAll {
 		if contains := e.containsOne(user.Roles, match); !contains {
 			return false
 		}
@@ -92,10 +92,10 @@ func (e *RBACEnforcer) enforceRequireMatchAll(user *base.WunderGraphUser[string]
 }
 
 func (e *RBACEnforcer) enforceRequireMatchAny(user *base.WunderGraphUser[string]) bool {
-	if len(e.requireMatchAny) == 0 {
+	if len(e.RequireMatchAny) == 0 {
 		return true
 	}
-	for _, match := range e.requireMatchAny {
+	for _, match := range e.RequireMatchAny {
 		if contains := e.containsOne(user.Roles, match); contains {
 			return true
 		}
@@ -104,10 +104,10 @@ func (e *RBACEnforcer) enforceRequireMatchAny(user *base.WunderGraphUser[string]
 }
 
 func (e *RBACEnforcer) enforceDenyMatchAll(user *base.WunderGraphUser[string]) bool {
-	if len(e.denyMatchAll) == 0 {
+	if len(e.DenyMatchAll) == 0 {
 		return true
 	}
-	for _, match := range e.denyMatchAll {
+	for _, match := range e.DenyMatchAll {
 		if contains := e.containsOne(user.Roles, match); !contains {
 			return true
 		}
@@ -116,10 +116,10 @@ func (e *RBACEnforcer) enforceDenyMatchAll(user *base.WunderGraphUser[string]) b
 }
 
 func (e *RBACEnforcer) enforceDenyMatchAny(user *base.WunderGraphUser[string]) bool {
-	if len(e.denyMatchAny) == 0 {
+	if len(e.DenyMatchAny) == 0 {
 		return true
 	}
-	for _, match := range e.denyMatchAny {
+	for _, match := range e.DenyMatchAny {
 		if contains := e.containsOne(user.Roles, match); contains {
 			return false
 		}
