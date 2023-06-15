@@ -5170,6 +5170,7 @@ type NodeOptions struct {
 	Listen                       *ListenerOptions       `protobuf:"bytes,2,opt,name=listen,proto3" json:"listen"`
 	Logger                       *NodeLogging           `protobuf:"bytes,3,opt,name=logger,proto3" json:"logger"`
 	DefaultRequestTimeoutSeconds int64                  `protobuf:"varint,5,opt,name=defaultRequestTimeoutSeconds,proto3" json:"defaultRequestTimeoutSeconds"`
+	OsEnvFilePath                string                 `protobuf:"bytes,6,opt,name=osEnvFilePath,proto3" json:"osEnvFilePath"`
 }
 
 func (x *NodeOptions) Reset() {
