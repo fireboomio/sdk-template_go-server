@@ -5,15 +5,9 @@ type OperationHooks Record[string, OperationConfiguration]
 type OperationBody[I, O any] struct {
 	Op                      string                    `json:"op,omitempty"`
 	Hook                    string                    `json:"hook,omitempty"`
-	Config                  *HooksRouteConfig         `json:"config,omitempty"`
 	Input                   I                         `json:"input,omitempty"`
 	Response                *OperationBodyResponse[O] `json:"response"`
 	SetClientRequestHeaders map[string]string         `json:"setClientRequestHeaders,omitempty"`
-}
-
-type HooksRouteConfig struct {
-	OperationName string `json:"operationName"`
-	Kind          string `json:"kind"`
 }
 
 type GraphQLError struct {

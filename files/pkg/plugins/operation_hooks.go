@@ -47,41 +47,40 @@ func RegisterOperationsHooks(e *echo.Echo, operations []string, operationHooksMa
 func registerOperationHooks(e *echo.Echo, operationPath string, operationHooksMap base.OperationHooks) {
 	if operationHook, ok := operationHooksMap[operationPath]; ok {
 		pathPrefix := path.Join("/operation", operationPath)
-		routeConfig := &base.HooksRouteConfig{OperationName: operationPath, Kind: "hook"}
 		if operationHook.MockResolve != nil {
 			apiPath := path.Join(pathPrefix, mockResolveKey)
 			e.Logger.Debugf(`Registered operationHook [%s]`, apiPath)
-			e.POST(apiPath, mockResolve(operationPath, operationHook.MockResolve, routeConfig))
+			e.POST(apiPath, buildOperationHook(operationPath, mockResolveKey, operationHook.CustomResolve, mockResolve))
 		}
 
 		if operationHook.PreResolve != nil {
 			apiPath := path.Join(pathPrefix, preResolveKey)
 			e.Logger.Debugf(`Registered operationHook [%s]`, apiPath)
-			e.POST(apiPath, preResolve(operationPath, operationHook.PreResolve, routeConfig))
+			e.POST(apiPath, buildOperationHook(operationPath, preResolveKey, operationHook.CustomResolve, preResolve))
 		}
 
 		if operationHook.PostResolve != nil {
 			apiPath := path.Join(pathPrefix, postResolveKey)
 			e.Logger.Debugf(`Registered operationHook [%s]`, apiPath)
-			e.POST(apiPath, postResolve(operationPath, operationHook.PostResolve, routeConfig))
+			e.POST(apiPath, buildOperationHook(operationPath, postResolveKey, operationHook.CustomResolve, postResolve))
 		}
 
 		if operationHook.MutatingPreResolve != nil {
 			apiPath := path.Join(pathPrefix, mutatingPreResolveKey)
 			e.Logger.Debugf(`Registered operationHook [%s]`, apiPath)
-			e.POST(apiPath, mutatingPreResolve(operationPath, operationHook.MutatingPreResolve, routeConfig))
+			e.POST(apiPath, buildOperationHook(operationPath, mutatingPreResolveKey, operationHook.CustomResolve, mutatingPreResolve))
 		}
 
 		if operationHook.MutatingPostResolve != nil {
 			apiPath := path.Join(pathPrefix, mutatingPostResolveKey)
 			e.Logger.Debugf(`Registered operationHook [%s]`, apiPath)
-			e.POST(apiPath, mutatingPostResolve(operationPath, operationHook.MutatingPostResolve, routeConfig))
+			e.POST(apiPath, buildOperationHook(operationPath, mutatingPostResolveKey, operationHook.CustomResolve, mutatingPostResolve))
 		}
 
 		if operationHook.CustomResolve != nil {
 			apiPath := path.Join(pathPrefix, customResolveKey)
 			e.Logger.Debugf(`Registered operationHook [%s]`, apiPath)
-			e.POST(apiPath, customResolve(operationPath, operationHook.CustomResolve, routeConfig))
+			e.POST(apiPath, buildOperationHook(operationPath, customResolveKey, operationHook.CustomResolve, customResolve))
 		}
 	}
 }
@@ -105,189 +104,56 @@ func requestContext(c echo.Context) (result *base.HookRequest, err error) {
 	return result, nil
 }
 
-func mockResolve(operationName string, hookFunction base.OperationHookFunction, routeConfig *base.HooksRouteConfig) echo.HandlerFunc {
-	return func(c echo.Context) error {
-		c.Response().Header().Set(echo.HeaderContentType, echo.MIMEApplicationJSONCharsetUTF8)
-		c.Response().WriteHeader(http.StatusOK)
-
-		var param base.OperationBody[any, any]
-		err := c.Bind(&param)
-		if err != nil {
-			return buildEchoJsonError(c, operationName, mockResolveKey, err)
-		}
-
-		hookRequest, err := requestContext(c)
-		if err != nil {
-			return buildEchoJsonError(c, operationName, mockResolveKey, err)
-		}
-
-		param.Op = operationName
-		param.Hook = mockResolveKey
-		param.Config = routeConfig
-		param.SetClientRequestHeaders = headersToObject(c.Request().Header)
-		mutated, err := hookFunction(hookRequest, &param)
-		if err != nil {
-			return buildEchoJsonError(c, operationName, mockResolveKey, err)
-		}
-
-		if nil != mutated {
-			param.Response = mutated.Response
-		}
-		return c.JSON(http.StatusOK, &param)
-	}
+func mockResolve(in, out *base.OperationBody[any, any]) {
+	in.SetClientRequestHeaders = out.SetClientRequestHeaders
+}
+func preResolve(in, out *base.OperationBody[any, any]) {
+	in.SetClientRequestHeaders = out.SetClientRequestHeaders
 }
 
-func preResolve(operationName string, hookFunction base.OperationHookFunction, routeConfig *base.HooksRouteConfig) echo.HandlerFunc {
-	return func(c echo.Context) error {
-		c.Response().Header().Set(echo.HeaderContentType, echo.MIMEApplicationJSONCharsetUTF8)
-		c.Response().WriteHeader(http.StatusOK)
-
-		var param base.OperationBody[any, any]
-		err := c.Bind(&param)
-		if err != nil {
-			return buildEchoJsonError(c, operationName, preResolveKey, err)
-		}
-
-		hookRequest, err := requestContext(c)
-		if err != nil {
-			return buildEchoJsonError(c, operationName, preResolveKey, err)
-		}
-
-		param.Op = operationName
-		param.Hook = preResolveKey
-		param.Config = routeConfig
-		param.SetClientRequestHeaders = headersToObject(c.Request().Header)
-		_, err = hookFunction(hookRequest, &param)
-		if err != nil {
-			return buildEchoJsonError(c, operationName, preResolveKey, err)
-		}
-
-		return c.JSON(http.StatusOK, &param)
-	}
+func postResolve(in, out *base.OperationBody[any, any]) {
+	in.SetClientRequestHeaders = out.SetClientRequestHeaders
 }
 
-func postResolve(operationName string, hookFunction base.OperationHookFunction, routeConfig *base.HooksRouteConfig) echo.HandlerFunc {
-	return func(c echo.Context) error {
-		c.Response().Header().Set(echo.HeaderContentType, echo.MIMEApplicationJSONCharsetUTF8)
-		c.Response().WriteHeader(http.StatusOK)
-
-		var param base.OperationBody[any, any]
-		err := c.Bind(&param)
-		if err != nil {
-			return buildEchoJsonError(c, operationName, postResolveKey, err)
-		}
-
-		hookRequest, err := requestContext(c)
-		if err != nil {
-			return buildEchoJsonError(c, operationName, postResolveKey, err)
-		}
-
-		param.Op = operationName
-		param.Hook = postResolveKey
-		param.Config = routeConfig
-		param.SetClientRequestHeaders = headersToObject(c.Request().Header)
-		_, err = hookFunction(hookRequest, &param)
-		if err != nil {
-			return buildEchoJsonError(c, operationName, postResolveKey, err)
-		}
-
-		return c.JSON(http.StatusOK, &param)
-	}
+func mutatingPreResolve(in, out *base.OperationBody[any, any]) {
+	in.Input = out.Input
+	in.SetClientRequestHeaders = out.SetClientRequestHeaders
 }
 
-func mutatingPreResolve(operationName string, hookFunction base.OperationHookFunction, routeConfig *base.HooksRouteConfig) echo.HandlerFunc {
-	return func(c echo.Context) error {
-		c.Response().Header().Set(echo.HeaderContentType, echo.MIMEApplicationJSONCharsetUTF8)
-		c.Response().WriteHeader(http.StatusOK)
-
-		var param base.OperationBody[any, any]
-		err := c.Bind(&param)
-		if err != nil {
-			return buildEchoJsonError(c, operationName, mutatingPreResolveKey, err)
-		}
-
-		hookRequest, err := requestContext(c)
-		if err != nil {
-			return buildEchoJsonError(c, operationName, mutatingPreResolveKey, err)
-		}
-
-		param.Op = operationName
-		param.Hook = mutatingPreResolveKey
-		param.Config = routeConfig
-		param.SetClientRequestHeaders = headersToObject(c.Request().Header)
-		mutatedInput, err := hookFunction(hookRequest, &param)
-		if err != nil {
-			return buildEchoJsonError(c, operationName, mutatingPreResolveKey, err)
-		}
-
-		if mutatedInput != nil {
-			param.Input = mutatedInput.Input
-		}
-		return c.JSON(http.StatusOK, &param)
-	}
+func mutatingPostResolve(in, out *base.OperationBody[any, any]) {
+	in.Response = out.Response
+	in.SetClientRequestHeaders = out.SetClientRequestHeaders
 }
 
-func mutatingPostResolve(operationName string, hookFunction base.OperationHookFunction, routeConfig *base.HooksRouteConfig) echo.HandlerFunc {
-	return func(c echo.Context) error {
-		c.Response().Header().Set(echo.HeaderContentType, echo.MIMEApplicationJSONCharsetUTF8)
-		c.Response().WriteHeader(http.StatusOK)
-
-		var param base.OperationBody[any, any]
-		err := c.Bind(&param)
-		if err != nil {
-			return buildEchoJsonError(c, operationName, mutatingPostResolveKey, err)
-		}
-
-		hookRequest, err := requestContext(c)
-		if err != nil {
-			return buildEchoJsonError(c, operationName, mutatingPostResolveKey, err)
-		}
-
-		param.Op = operationName
-		param.Hook = mutatingPostResolveKey
-		param.Config = routeConfig
-		param.SetClientRequestHeaders = headersToObject(c.Request().Header)
-		mutatedResponse, err := hookFunction(hookRequest, &param)
-		if err != nil {
-			return buildEchoJsonError(c, operationName, mutatingPostResolveKey, err)
-		}
-
-		if nil != mutatedResponse {
-			param.Response = mutatedResponse.Response
-		}
-		return c.JSON(http.StatusOK, &param)
-	}
+func customResolve(in, out *base.OperationBody[any, any]) {
+	in.Response = out.Response
+	in.SetClientRequestHeaders = out.SetClientRequestHeaders
 }
 
-func customResolve(operationName string, hookFunction base.OperationHookFunction, routeConfig *base.HooksRouteConfig) echo.HandlerFunc {
-	return func(c echo.Context) error {
+func buildOperationHook(operationName, hookName string, hookFunction base.OperationHookFunction, action func(in, out *base.OperationBody[any, any])) echo.HandlerFunc {
+	return func(c echo.Context) (err error) {
 		c.Response().Header().Set(echo.HeaderContentType, echo.MIMEApplicationJSONCharsetUTF8)
 		c.Response().WriteHeader(http.StatusOK)
 
-		var param base.OperationBody[any, any]
-		err := c.Bind(&param)
+		var in base.OperationBody[any, any]
+		err = c.Bind(&in)
 		if err != nil {
-			return buildEchoJsonError(c, operationName, customResolveKey, err)
+			return
 		}
 
 		hookRequest, err := requestContext(c)
 		if err != nil {
-			return buildEchoJsonError(c, operationName, customResolveKey, err)
+			return
 		}
 
-		param.Op = operationName
-		param.Hook = customResolveKey
-		param.Config = routeConfig
-		param.SetClientRequestHeaders = headersToObject(c.Request().Header)
-		out, err := hookFunction(hookRequest, &param)
-		if err != nil {
-			return buildEchoJsonError(c, operationName, customResolveKey, err)
-		}
-
+		in.Op = operationName
+		in.Hook = hookName
+		in.SetClientRequestHeaders = headersToObject(c.Request().Header)
+		out, err := hookFunction(hookRequest, &in)
 		if out != nil {
-			param.Response = out.Response
+			action(&in, out)
 		}
-		return c.JSON(http.StatusOK, &param)
+		return c.JSON(http.StatusOK, &in)
 	}
 }
 
