@@ -105,6 +105,7 @@ func requestContext(c echo.Context) (result *base.HookRequest, err error) {
 }
 
 func mockResolve(in, out *base.OperationBody[any, any]) {
+	in.Response = out.Response
 	in.SetClientRequestHeaders = out.SetClientRequestHeaders
 }
 func preResolve(in, out *base.OperationBody[any, any]) {
