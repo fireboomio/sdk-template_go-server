@@ -90,6 +90,10 @@ func configureWunderGraphServer() *echo.Echo {
 					RequestURI: c.Request().RequestURI,
 					Headers:    map[string]string{},
 				}
+			} else {
+				for name, value := range body.Wg.ClientRequest.Headers {
+					c.Request().Header.Set(name, value)
+				}
 			}
 			reqId := c.Request().Header.Get("x-request-id")
 			internalClient := base.InternalClientFactoryCall(map[string]string{"x-request-id": reqId}, body.Wg.ClientRequest, body.Wg.User)
