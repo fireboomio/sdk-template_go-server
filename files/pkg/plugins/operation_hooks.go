@@ -50,31 +50,31 @@ func registerOperationHooks(e *echo.Echo, operationPath string, operationHooksMa
 		if operationHook.MockResolve != nil {
 			apiPath := path.Join(pathPrefix, mockResolveKey)
 			e.Logger.Debugf(`Registered operationHook [%s]`, apiPath)
-			e.POST(apiPath, buildOperationHook(operationPath, mockResolveKey, operationHook.CustomResolve, mockResolve))
+			e.POST(apiPath, buildOperationHook(operationPath, mockResolveKey, operationHook.MockResolve, mockResolve))
 		}
 
 		if operationHook.PreResolve != nil {
 			apiPath := path.Join(pathPrefix, preResolveKey)
 			e.Logger.Debugf(`Registered operationHook [%s]`, apiPath)
-			e.POST(apiPath, buildOperationHook(operationPath, preResolveKey, operationHook.CustomResolve, preResolve))
+			e.POST(apiPath, buildOperationHook(operationPath, preResolveKey, operationHook.PreResolve, preResolve))
 		}
 
 		if operationHook.PostResolve != nil {
 			apiPath := path.Join(pathPrefix, postResolveKey)
 			e.Logger.Debugf(`Registered operationHook [%s]`, apiPath)
-			e.POST(apiPath, buildOperationHook(operationPath, postResolveKey, operationHook.CustomResolve, postResolve))
+			e.POST(apiPath, buildOperationHook(operationPath, postResolveKey, operationHook.PostResolve, postResolve))
 		}
 
 		if operationHook.MutatingPreResolve != nil {
 			apiPath := path.Join(pathPrefix, mutatingPreResolveKey)
 			e.Logger.Debugf(`Registered operationHook [%s]`, apiPath)
-			e.POST(apiPath, buildOperationHook(operationPath, mutatingPreResolveKey, operationHook.CustomResolve, mutatingPreResolve))
+			e.POST(apiPath, buildOperationHook(operationPath, mutatingPreResolveKey, operationHook.MutatingPreResolve, mutatingPreResolve))
 		}
 
 		if operationHook.MutatingPostResolve != nil {
 			apiPath := path.Join(pathPrefix, mutatingPostResolveKey)
 			e.Logger.Debugf(`Registered operationHook [%s]`, apiPath)
-			e.POST(apiPath, buildOperationHook(operationPath, mutatingPostResolveKey, operationHook.CustomResolve, mutatingPostResolve))
+			e.POST(apiPath, buildOperationHook(operationPath, mutatingPostResolveKey, operationHook.MutatingPostResolve, mutatingPostResolve))
 		}
 
 		if operationHook.CustomResolve != nil {
