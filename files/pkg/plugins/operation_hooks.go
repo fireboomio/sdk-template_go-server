@@ -167,12 +167,3 @@ func headersToObject(headers http.Header) map[string]string {
 	}
 	return obj
 }
-
-func buildEchoJsonError(c echo.Context, operationName, hookName string, err error) error {
-	c.Logger().Error(err)
-	return c.JSON(http.StatusInternalServerError, map[string]interface{}{
-		"op":    operationName,
-		"hook":  hookName,
-		"error": err.Error(),
-	})
-}
