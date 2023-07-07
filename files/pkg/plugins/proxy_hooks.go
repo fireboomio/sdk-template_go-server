@@ -141,31 +141,35 @@ func RegisterProxyHooks(e *echo.Echo) {
 	for name, proxyHook := range httpProxyHookMap {
 		apiPath := path.Join(apiPrefixPath, name)
 		e.Logger.Debugf(`Registered proxyHook [%s]`, apiPath)
-		e.POST(apiPath, func(c echo.Context) error {
-			brc := c.(*base.HttpTransportHookRequest)
-			if proceed := proxyHook.rbacEnforcer.Enforce(brc); !proceed {
-				return echo.NewHTTPError(http.StatusUnauthorized, "unauthorized")
-			}
+		e.POST(apiPath, buildProxyHook(proxyHook))
+	}
+}
 
-			var reqBody HttpTransportBody
-			err := c.Bind(&reqBody)
-			if err != nil {
-				return echo.NewHTTPError(http.StatusBadRequest, err.Error())
-			}
+func buildProxyHook(proxyHook *httpProxyHook) echo.HandlerFunc {
+	return func(c echo.Context) (err error) {
+		brc := c.(*base.HttpTransportHookRequest)
+		if proceed := proxyHook.rbacEnforcer.Enforce(brc); !proceed {
+			return echo.NewHTTPError(http.StatusUnauthorized, "unauthorized")
+		}
 
-			newResp, err := proxyHook.hookFunction(brc, &reqBody)
-			if err != nil {
-				return echo.NewHTTPError(http.StatusBadRequest, err.Error())
-			}
-			resp := map[string]interface{}{
-				"op":       reqBody.Name,
-				"hook":     "proxyHook",
-				"response": map[string]interface{}{},
-			}
-			if newResp != nil {
-				resp["response"].(map[string]interface{})["response"] = newResp
-			}
-			return c.JSON(http.StatusOK, resp)
-		})
+		var reqBody HttpTransportBody
+		err = c.Bind(&reqBody)
+		if err != nil {
+			return echo.NewHTTPError(http.StatusBadRequest, err.Error())
+		}
+
+		newResp, err := proxyHook.hookFunction(brc, &reqBody)
+		if err != nil {
+			return echo.NewHTTPError(http.StatusBadRequest, err.Error())
+		}
+		resp := map[string]interface{}{
+			"op":       reqBody.Name,
+			"hook":     "proxyHook",
+			"response": map[string]interface{}{},
+		}
+		if newResp != nil {
+			resp["response"].(map[string]interface{})["response"] = newResp
+		}
+		return c.JSON(http.StatusOK, resp)
 	}
 }

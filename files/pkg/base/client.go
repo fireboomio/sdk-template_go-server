@@ -67,6 +67,7 @@ type BaseRequestContext struct {
 	echo.Context
 	User           *WunderGraphUser[string]
 	InternalClient *InternalClient
+	Headers        map[string]string
 }
 
 type AuthenticationHookRequest = BaseRequestContext
