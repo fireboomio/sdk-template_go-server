@@ -1,0 +1,13 @@
+package types
+
+import (
+    "custom-go/pkg/utils"
+    "github.com/joho/godotenv"
+)
+
+const configJsonPath = "{{nodeConfigFilepath}}"
+
+func init() {
+    _ = utils.ReadStructAndCacheFile(configJsonPath, &WdgGraphConfig)
+    _ = godotenv.Overload(WdgGraphConfig.Api.NodeOptions.NodeEnvFilepath)
+}
