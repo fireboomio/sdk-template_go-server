@@ -5,9 +5,12 @@ import (
     "github.com/joho/godotenv"
 )
 
-const configJsonPath = "{{nodeConfigFilepath}}"
+const (
+    nodeConfigFilepath = "{{nodeConfigFilepath}}"
+    nodeEnvFilepath = "{{nodeEnvFilepath}}"
+)
 
 func init() {
-    _ = utils.ReadStructAndCacheFile(configJsonPath, &WdgGraphConfig)
-    _ = godotenv.Overload(WdgGraphConfig.Api.NodeOptions.NodeEnvFilepath)
+    _ = utils.ReadStructAndCacheFile(nodeConfigFilepath, &WdgGraphConfig)
+    _ = godotenv.Overload(nodeEnvFilepath)
 }
