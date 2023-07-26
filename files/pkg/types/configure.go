@@ -1,11 +1,19 @@
 package types
 
 import (
+	"custom-go/pkg/utils"
 	"custom-go/pkg/wgpb"
 	"golang.org/x/exp/slices"
+	"path/filepath"
 )
 
 var WdgGraphConfig WunderGraphConfiguration
+
+var configJsonPath = filepath.Join("generated", "fireboom.config.json")
+
+func init() {
+	_ = utils.ReadStructAndCacheFile(configJsonPath, &WdgGraphConfig)
+}
 
 type WunderGraphConfiguration struct {
 	Api                              *UserDefinedApiSdk `json:"api,omitempty"`
