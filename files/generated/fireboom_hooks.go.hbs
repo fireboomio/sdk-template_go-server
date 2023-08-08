@@ -1,0 +1,26 @@
+package generated
+import "custom-go/pkg/base"
+
+{{#if operations}}
+type (
+    {{#each operations}}
+    {{name}}Body{{fillSpaces maxLengthMap name}} = *base.OperationBody[{{fmtSprintf '%sInternalInput' name}}, {{name}}ResponseData]
+    {{/each}}
+)
+
+const (
+    {{#each operations}}
+        {{#if isQuery}}
+    {{name}} {{fillSpaces maxLengthMap name}}base.OperationQueryPath = "{{path}}"
+        {{/if~}}
+    {{/each}}
+)
+
+const (
+    {{#each operations}}
+        {{#if isMutation}}
+    {{name}} {{fillSpaces maxLengthMap name}}base.OperationMutationPath = "{{path}}"
+        {{/if~}}
+    {{/each}}
+)
+{{/if}}
