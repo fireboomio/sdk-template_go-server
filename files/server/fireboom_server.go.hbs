@@ -66,14 +66,11 @@ func init() {
                 {{/if}}
             },
             {{/if}}
-            {{~#if authentication}}
             Authentication: plugins.AuthenticationConfiguration{
             {{#each authentication}}
                 {{upperFirst this}}: auth.{{upperFirst this}},
-            {{/each~}}
+            {{/each}}
             },
-            {{/if}}
-            {{~#if queries}}
             Queries: base.OperationHooks{
             {{#each queries as |hooks operationName|}}
                 "{{operationName}}": {
@@ -81,10 +78,8 @@ func init() {
                     {{upperFirst this}}: plugins.ConvertBodyFunc[generated.{{replaceSpecial operationName "__"}}InternalInput, generated.{{replaceSpecial operationName "__"}}ResponseData](operation_{{replaceSpecial operationName "__"}}.{{upperFirst this}}),
                 {{/each}}
                 },
-            },
             {{/each}}
-            {{/if}}
-            {{~#if mutations}}
+            },
             Mutations: base.OperationHooks{
             {{#each mutations as |hooks operationName|}}
                 "{{operationName}}": {
@@ -92,9 +87,8 @@ func init() {
                     {{upperFirst this}}: plugins.ConvertBodyFunc[generated.{{replaceSpecial operationName "__"}}InternalInput, generated.{{replaceSpecial operationName "__"}}ResponseData](operation_{{replaceSpecial operationName "__"}}.{{upperFirst this}}),
                 {{/each}}
                 },
-            },
             {{/each}}
-            {{/if}}
+            },
         },
         {{/with}}
         {{#if s3Providers}}
@@ -120,17 +114,5 @@ func init() {
                     {{/if~}}
                 {{/each}}
         {{/if}}
-        {{#if customizedDataSources}}
-    	GraphqlServers: []plugins.GraphQLServerConfig{
-                {{#each customizedDataSources}}
-                    {
-                    ApiNamespace:          "{{this}}",
-                    ServerName:            "{{this}}",
-                    EnableGraphQLEndpoint: true,
-                    Schema:                customize.{{upperFirst this}}_schema,
-                    },
-                {{/each}}
-    	},
-        {{/if~}}
     }
 }
