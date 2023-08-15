@@ -10,9 +10,9 @@ import (
     "custom-go/global"
     {{/if}}
     {{~#if (isAnyTrue (isNotEmpty queries) (isNotEmpty mutations) (isNotEmpty subscriptions))}}
-    {{#if (isAbsent onceMap 'custom-go/generated' true)}}
+        {{#if (isAbsent onceMap 'custom-go/generated' true)}}
     "custom-go/generated"
-    {{/if}}
+        {{/if}}
         {{#each queries as |operationConf operationName|}}
     operation_{{replaceSpecial operationName "__"}} "custom-go/operation/{{operationName}}"
         {{/each}}
@@ -24,25 +24,19 @@ import (
         {{/each}}
     {{/if}}
 {{/with}}
-	"custom-go/pkg/base"
-	"custom-go/pkg/plugins"
-	"custom-go/pkg/types"
-{{#each s3Providers}}
+    "custom-go/pkg/base"
+    "custom-go/pkg/plugins"
+    "custom-go/pkg/types"
+{{~#each s3Providers}}
     {{#each uploadProfiles}}
-    {{#if (isAnyTrue hooks.preUpload hooks.postUpload)}}
-    {{#if (isAbsent onceMap 'custom-go/generated' (isNotEmpty metadataJSONSchema))}}
+        {{#if (isAnyTrue hooks.preUpload hooks.postUpload)}}
+            {{#if (isAbsent onceMap 'custom-go/generated' (isNotEmpty metadataJSONSchema))}}
     "custom-go/generated"
-    {{/if}}
+            {{/if}}
     {{fmtSprintf 'uploads_%s_%s' name @key}} "{{fmtSprintf 'custom-go/uploads/%s/%s' name @key}}"
-    {{/if}}
+        {{/if}}
     {{/each}}
-{{/each}}
-    {{#if customizedDataSources}}
-    "custom-go/customize"
-    {{/if}}
-{{#each proxyDirectories}}
-    _ "custom-go/proxys{{#unless (equalAny this "")}}/{{this}}{{/unless}}"
-{{/each}}
+{{/each~}}
 )
 
 const nodeEnvFilepath = "{{nodeEnvFilepath}}"
@@ -51,68 +45,69 @@ func init() {
     _ = godotenv.Overload(nodeEnvFilepath)
 
     types.WdgHooksAndServerConfig = types.WunderGraphHooksAndServerConfig{
-    	Hooks: types.HooksConfiguration{
-        {{#with hooksConfiguration}}
-            {{~#if global.httpTransport}}
+        Hooks: types.HooksConfiguration{
+    {{#with hooksConfiguration}}
+        {{~#if global.httpTransport}}
             Global: plugins.GlobalConfiguration{
-                HttpTransport: plugins.HttpTransportHooks{
-                {{#each global.httpTransport as |conf hookName|}}
-                    {{upperFirst hookName}}: global.{{upperFirst hookName}},
-                {{/each}}
-                },
-                {{#if global.wsTransport}}
+            HttpTransport: plugins.HttpTransportHooks{
+            {{#each global.httpTransport as |conf hookName|}}
+                {{upperFirst hookName}}: global.{{upperFirst hookName}},
+            {{/each}}
+            },
+            {{#if global.wsTransport}}
                 WsTransport: plugins.WsTransportHooks{
-                    OnConnectionInit: global.OnConnectionInit,
-                {{/if}}
-            },
+                OnConnectionInit: global.OnConnectionInit,
             {{/if}}
+            },
+        {{/if}}
             Authentication: plugins.AuthenticationConfiguration{
-            {{#each authentication}}
-                {{upperFirst this}}: auth.{{upperFirst this}},
-            {{/each}}
-            },
-            Queries: base.OperationHooks{
-            {{#each queries as |hooks operationName|}}
-                "{{operationName}}": {
-                {{#each hooks}}
-                    {{upperFirst this}}: plugins.ConvertBodyFunc[generated.{{replaceSpecial operationName "__"}}InternalInput, generated.{{replaceSpecial operationName "__"}}ResponseData](operation_{{replaceSpecial operationName "__"}}.{{upperFirst this}}),
-                {{/each}}
-                },
-            {{/each}}
-            },
-            Mutations: base.OperationHooks{
-            {{#each mutations as |hooks operationName|}}
-                "{{operationName}}": {
-                {{#each hooks}}
-                    {{upperFirst this}}: plugins.ConvertBodyFunc[generated.{{replaceSpecial operationName "__"}}InternalInput, generated.{{replaceSpecial operationName "__"}}ResponseData](operation_{{replaceSpecial operationName "__"}}.{{upperFirst this}}),
-                {{/each}}
-                },
-            {{/each}}
-            },
+        {{~#each authentication}}
+            {{upperFirst this}}: auth.{{upperFirst this}},
+        {{/each~}}
         },
-        {{/with}}
+            Queries: base.OperationHooks{
+        {{~#each queries as |hooks operationName|}}
+            "{{operationName}}": {
+            {{#each hooks}}
+                {{upperFirst this}}: plugins.ConvertBodyFunc[generated.{{replaceSpecial operationName "__"}}InternalInput, generated.{{replaceSpecial operationName "__"}}ResponseData](operation_{{replaceSpecial operationName "__"}}.{{upperFirst this}}),
+            {{/each}}
+            },
+        {{/each~}}
+        },
+            Mutations: base.OperationHooks{
+        {{~#each mutations as |hooks operationName|}}
+            "{{operationName}}": {
+            {{#each hooks}}
+                {{upperFirst this}}: plugins.ConvertBodyFunc[generated.{{replaceSpecial operationName "__"}}InternalInput, generated.{{replaceSpecial operationName "__"}}ResponseData](operation_{{replaceSpecial operationName "__"}}.{{upperFirst this}}),
+            {{/each}}
+            },
+        {{/each~}}
+        },
         {{#if s3Providers}}
             Uploads: map[string]plugins.UploadHooks{
-                {{#each s3Providers}}
-                    {{#if uploadProfiles}}
+            {{#each s3Providers}}
+                {{~#if uploadProfiles}}
                 "{{name}}": {
-                        {{#each uploadProfiles}}
-                            {{#if (isAnyTrue hooks.preUpload hooks.postUpload)}}
-                                {{#with (getMaxLength maxLengthMap (fmtSprintf 'Uploads_%s_%s' name @key) hooks)}}
-                        "{{@key}}": {
-                                    {{#if hooks.preUpload}}
-                              PreUpload: {{fixSpace 'PreUpload' this.name}}plugins.ConvertUploadFunc[{{#if metadataJSONSchema}}generated.{{upperFirst (fmtSprintf '%s_%sProfileMeta' ../name @key)}}{{else}}any{{/if}}]({{fmtSprintf 'uploads_%s_%s' ../name @key}}.PreUpload),
-                                    {{/if~}}
-                                    {{#if hooks.postUpload}}
+                    {{~#each uploadProfiles}}
+                        {{~#if (isAnyTrue hooks.preUpload hooks.postUpload)}}
+                            {{#with (getMaxLength maxLengthMap (fmtSprintf 'Uploads_%s_%s' name @key) hooks)}}
+                                "{{@key}}": {
+                                {{#if hooks.preUpload}}
+                                    PreUpload: {{fixSpace 'PreUpload' this.name}}plugins.ConvertUploadFunc[{{#if metadataJSONSchema}}generated.{{upperFirst (fmtSprintf '%s_%sProfileMeta' ../name @key)}}{{else}}any{{/if}}]({{fmtSprintf 'uploads_%s_%s' ../name @key}}.PreUpload),
+                                {{/if~}}
+                                {{#if hooks.postUpload}}
                                     PostUpload: {{fixSpace 'PostUpload' this.name}}plugins.ConvertUploadFunc[{{#if metadataJSONSchema}}generated.{{upperFirst (fmtSprintf '%s_%sProfileMeta' ../name @key)}}{{else}}any{{/if}}]({{fmtSprintf 'uploads_%s_%s' ../name @key}}.PostUpload),
-                                    {{/if}}
-                                    },
-                                {{~/with}}
-                            {{/if}}
-                        {{/each}}
-                },
-                    {{/if~}}
-                {{/each}}
+                                {{/if}}
+                                },
+                            {{~/with}}
+                        {{/if~}}
+                    {{/each~}}
+                    },
+                {{/if~}}
+            {{/each}}
+            },
         {{/if}}
+        },
+    {{/with}}
     }
 }
