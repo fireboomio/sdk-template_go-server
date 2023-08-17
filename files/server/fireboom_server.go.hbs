@@ -4,7 +4,7 @@ import (
     "github.com/joho/godotenv"
 {{#with hooksConfiguration}}
     {{~#if authentication}}
-    "custom-go/auth"
+    "custom-go/authentication"
     {{/if}}
     {{~#if global.httpTransport}}
     "custom-go/global"
@@ -47,42 +47,43 @@ func init() {
     types.WdgHooksAndServerConfig = types.WunderGraphHooksAndServerConfig{
         Hooks: types.HooksConfiguration{
     {{#with hooksConfiguration}}
-        {{~#if global.httpTransport}}
             Global: plugins.GlobalConfiguration{
-            HttpTransport: plugins.HttpTransportHooks{
-            {{#each global.httpTransport as |conf hookName|}}
-                {{upperFirst hookName}}: global.{{upperFirst hookName}},
-            {{/each}}
-            },
-            {{#if global.wsTransport}}
+        {{~#if global.httpTransport}}
+                HttpTransport: plugins.HttpTransportHooks{
+                {{#each global.httpTransport as |conf hookName|}}
+                    {{upperFirst hookName}}: global.{{upperFirst hookName}},
+                {{/each}}
+                },
+                {{#if global.wsTransport}}
                 WsTransport: plugins.WsTransportHooks{
-                OnConnectionInit: global.OnConnectionInit,
-            {{/if}}
-            },
+                    OnConnectionInit: global.OnConnectionInit,
+                },
+                {{/if}}
         {{/if}}
+            },
             Authentication: plugins.AuthenticationConfiguration{
-        {{~#each authentication}}
-            {{upperFirst this}}: auth.{{upperFirst this}},
-        {{/each~}}
-        },
+        {{#each authentication}}
+                {{upperFirst this}}: authentication.{{upperFirst this}},
+        {{/each}}
+            },
             Queries: base.OperationHooks{
-        {{~#each queries as |hooks operationName|}}
-            "{{operationName}}": {
+        {{#each queries as |hooks operationName|}}
+                "{{operationName}}": {
             {{#each hooks}}
                 {{upperFirst this}}: plugins.ConvertBodyFunc[generated.{{replaceSpecial operationName "__"}}InternalInput, generated.{{replaceSpecial operationName "__"}}ResponseData](operation_{{replaceSpecial operationName "__"}}.{{upperFirst this}}),
             {{/each}}
+                },
+        {{/each}}
             },
-        {{/each~}}
-        },
             Mutations: base.OperationHooks{
-        {{~#each mutations as |hooks operationName|}}
-            "{{operationName}}": {
+        {{#each mutations as |hooks operationName|}}
+                "{{operationName}}": {
             {{#each hooks}}
                 {{upperFirst this}}: plugins.ConvertBodyFunc[generated.{{replaceSpecial operationName "__"}}InternalInput, generated.{{replaceSpecial operationName "__"}}ResponseData](operation_{{replaceSpecial operationName "__"}}.{{upperFirst this}}),
             {{/each}}
+                },
+        {{/each}}
             },
-        {{/each~}}
-        },
         {{#if s3Providers}}
             Uploads: map[string]plugins.UploadHooks{
             {{#each s3Providers}}
@@ -105,7 +106,7 @@ func init() {
                     },
                 {{/if~}}
             {{/each}}
-            },
+                },
         {{/if}}
         },
     {{/with}}
