@@ -1,7 +1,6 @@
 package server
 
 import (
-    "github.com/joho/godotenv"
 {{#each hooksConfig as |hookConf hookType|}}
     {{~#equal hookType "Authentication"}}
         {{#if (isNotEmpty hookConf.tsPathMap)}}
@@ -43,6 +42,7 @@ import (
 {{#each proxyDirectories}}
     _ "custom-go/proxys{{#unless (equalAny this "")}}/{{this}}{{/unless}}"
 {{/each}}
+    "github.com/joho/godotenv"
 )
 
 const nodeEnvFilepath = "{{nodeEnvFilepath}}"
@@ -103,10 +103,10 @@ func init() {
                     {{#with (getMaxLength maxLengthMap (fmtSprintf 'Uploads_%s_%s' name @key) hooks)}}
                     "{{@key}}": {
                     {{#if hooks.preUpload}}
-                        PreUpload: {{fixSpace 'PreUpload' this.name}}plugins.ConvertUploadFunc[{{#if metadataJSONSchema}}generated.{{upperFirst (fmtSprintf '%s_%sProfileMeta' ../name @key)}}{{else}}any{{/if}}]({{fmtSprintf 'uploads_%s_%s' ../name @key}}.PreUpload),
+                        PreUpload: {{fixSpace 'PreUpload' this.name}}plugins.ConvertUploadFunc[generated.{{upperFirst (fmtSprintf '%s_%sProfileMeta' ../name @key)}}]({{fmtSprintf 'uploads_%s_%s' ../name @key}}.PreUpload),
                     {{/if~}}
                     {{#if hooks.postUpload}}
-                        PostUpload: {{fixSpace 'PostUpload' this.name}}plugins.ConvertUploadFunc[{{#if metadataJSONSchema}}generated.{{upperFirst (fmtSprintf '%s_%sProfileMeta' ../name @key)}}{{else}}any{{/if}}]({{fmtSprintf 'uploads_%s_%s' ../name @key}}.PostUpload),
+                        PostUpload: {{fixSpace 'PostUpload' this.name}}plugins.ConvertUploadFunc[generated.{{upperFirst (fmtSprintf '%s_%sProfileMeta' ../name @key)}}]({{fmtSprintf 'uploads_%s_%s' ../name @key}}.PostUpload),
                     {{/if}}
                     },
                     {{~/with}}
