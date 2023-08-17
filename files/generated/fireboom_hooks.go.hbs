@@ -1,26 +1,32 @@
 package generated
-import "custom-go/pkg/base"
+{{#if operations}}
+    import "custom-go/pkg/base"
+{{/if}}
 
 {{#if operations}}
-type (
+    type (
     {{#each operations}}
-    {{name}}Body{{fillSpaces maxLengthMap name}} = *base.OperationBody[{{fmtSprintf '%sInternalInput' name}}, {{name}}ResponseData]
+        {{upperFirst name}}Body = *base.OperationBody[{{upperFirst name}}InternalInput, {{upperFirst name}}ResponseData]
     {{/each}}
-)
+    )
+{{/if}}
 
-const (
+{{#if operations}}
+    const (
     {{#each operations}}
         {{#if isQuery}}
-    {{name}} {{fillSpaces maxLengthMap name}}base.OperationQueryPath = "{{path}}"
+        {{upperFirst name}} base.OperationQueryPath = "{{upperFirst path}}"
         {{/if~}}
     {{/each}}
-)
+    )
+{{/if}}
 
-const (
+{{#if operations}}
+    const (
     {{#each operations}}
         {{#if isMutation}}
-    {{name}} {{fillSpaces maxLengthMap name}}base.OperationMutationPath = "{{path}}"
-        {{/if~}}
+            {{upperFirst name}} base.OperationMutationPath = "{{path}}"
+        {{/if}}
     {{/each}}
-)
+    )
 {{/if}}

@@ -5,10 +5,10 @@ go 1.19
 require (
 	github.com/buger/jsonparser v1.1.1
 	github.com/graphql-go/graphql v0.8.0
-	github.com/joho/godotenv v1.5.1
 	github.com/labstack/echo/v4 v4.10.2
 	github.com/labstack/gommon v0.4.0
 	github.com/r3labs/sse/v2 v2.10.0
+	github.com/spf13/cast v1.3.0
 	github.com/tidwall/gjson v1.11.0
 	github.com/tidwall/sjson v1.0.4
 	github.com/wundergraph/graphql-go-tools v1.62.3

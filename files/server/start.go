@@ -12,6 +12,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"sync"
 	"syscall"
 	"time"
 
@@ -25,6 +26,11 @@ func Execute() {
 		os.Exit(1)
 	}
 }
+
+var (
+	address      string
+	healthReport *base.HealthReport
+)
 
 func configureWunderGraphServer() *echo.Echo {
 	// 初始化 Echo 实例
@@ -42,7 +48,6 @@ func configureWunderGraphServer() *echo.Echo {
 	}
 	e.Use(middleware.CORSWithConfig(corsCfg))
 
-	plugins.RegisterProxyHooks(e)
 	plugins.RegisterGlobalHooks(e, types.WdgHooksAndServerConfig.Hooks.Global)
 	plugins.RegisterAuthHooks(e, types.WdgHooksAndServerConfig.Hooks.Authentication)
 	plugins.RegisterUploadsHooks(e, types.WdgHooksAndServerConfig.Hooks.Uploads)
@@ -108,14 +113,24 @@ func configureWunderGraphServer() *echo.Echo {
 		}
 	})
 
-	for _, gqlServer := range types.WdgHooksAndServerConfig.GraphqlServers {
-		plugins.RegisterGraphql(e, gqlServer)
-	}
-
+	healthReport = &base.HealthReport{}
+	healthOnce := &sync.Once{}
 	// 健康检查
 	e.GET("/health", func(c echo.Context) error {
-		return c.JSON(http.StatusOK, map[string]string{"status": "ok"})
+		healthOnce.Do(func() {
+			for _, healthFunc := range base.GetHealthFuncArr() {
+				healthFunc(e, address, healthReport)
+			}
+		})
+		return c.JSON(http.StatusOK, map[string]interface{}{
+			"status": "ok",
+			"report": healthReport,
+		})
 	})
+
+	for _, routerFunc := range base.GetEchoRouterFuncArr() {
+		routerFunc(e)
+	}
 
 	return e
 }
@@ -127,7 +142,7 @@ func startServer() error {
 	// 启动服务器
 	go func() {
 		serverListen := types.WdgGraphConfig.Api.ServerOptions.Listen
-		address := utils.GetConfigurationVal(serverListen.Host) + ":" + utils.GetConfigurationVal(serverListen.Port)
+		address = utils.GetConfigurationVal(serverListen.Host) + ":" + utils.GetConfigurationVal(serverListen.Port)
 		if err := wdgServer.Start(address); err != nil {
 			panic(err)
 		}
