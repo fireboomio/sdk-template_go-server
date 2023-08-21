@@ -14,6 +14,7 @@ import (
 	"path"
 	"path/filepath"
 	"strings"
+	"time"
 )
 
 const (
@@ -69,6 +70,7 @@ func RegisterFunction[I, O any](hookFunc func(*base.HookRequest, *base.Operation
 		}
 
 		report.Functions = append(report.Functions, callerName)
+		report.Time = time.Now()
 	})
 }
 
