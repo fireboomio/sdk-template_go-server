@@ -84,7 +84,7 @@ type (
 	HealthReport   struct {
 		Customizes []string  `json:"customizes"`
 		Functions  []string  `json:"functions"`
-		Proxies    []string  `json:"proxies"`
+		Proxys     []string  `json:"proxys"`
 		Time       time.Time `json:"time"`
 	}
 	routerFunc func(e *echo.Echo)
