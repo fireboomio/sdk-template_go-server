@@ -6,7 +6,12 @@ package generated
 {{#if operations}}
     type (
     {{#each operations}}
+        {{~#if (equalAny engine 1)~}}
+        {{upperFirst name}}Body = *base.OperationBody[{{upperFirst name}}Input, {{upperFirst name}}ResponseData]
+        {{~else if (equalAny engine 2)}}
+        {{~else}}
         {{upperFirst name}}Body = *base.OperationBody[{{upperFirst name}}InternalInput, {{upperFirst name}}ResponseData]
+        {{/if~}}
     {{/each}}
     )
 {{/if}}
