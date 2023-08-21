@@ -3,10 +3,10 @@ package plugins
 import (
 	"custom-go/pkg/base"
 	"custom-go/pkg/consts"
+	"custom-go/pkg/utils"
 	"custom-go/pkg/wgpb"
 	"encoding/json"
 	"github.com/labstack/echo/v4"
-	"net/http"
 	"os"
 	"path"
 	"path/filepath"
@@ -14,25 +14,26 @@ import (
 
 type httpProxyHookFunction func(*base.HttpTransportHookRequest, *HttpTransportBody) (*base.ClientResponse, error)
 
-func RegisterProxyHook(httpMethod string, hookFunc httpProxyHookFunction, authRequired bool,
-	authorizationConfig *wgpb.OperationAuthorizationConfig) {
+func RegisterProxyHook(hookFunc httpProxyHookFunction, conf ...*HookConfig) {
 
-	callerName := GetCallerName(consts.PROXY)
+	callerName := utils.GetCallerName(consts.PROXY)
 	apiPrefixPath := "/" + consts.PROXY
 	apiPath := path.Join(apiPrefixPath, callerName)
 
 	base.AddEchoRouterFunc(func(e *echo.Echo) {
 		e.Logger.Debugf(`Registered hookFunction [%s]`, apiPath)
-		e.Add(httpMethod, apiPath, buildProxyHook(hookFunc))
+		e.POST(apiPath, BuildHookFunc(hookFunc))
 	})
 
 	base.AddHealthFunc(func(e *echo.Echo, s string, report *base.HealthReport) {
 		// 生成 operation 声明文件  proxy/xxx.json
 		operation := &wgpb.Operation{
-			Name:                 callerName,
-			AuthenticationConfig: &wgpb.OperationAuthenticationConfig{AuthRequired: authRequired},
-			AuthorizationConfig:  authorizationConfig,
-			Path:                 apiPath,
+			Name: callerName,
+			Path: apiPath,
+		}
+		if len(conf) > 0 {
+			operation.AuthenticationConfig = &wgpb.OperationAuthenticationConfig{AuthRequired: conf[0].AuthRequired}
+			operation.AuthorizationConfig = conf[0].AuthorizationConfig
 		}
 
 		operationBytes, err := json.Marshal(operation)
@@ -46,32 +47,6 @@ func RegisterProxyHook(httpMethod string, hookFunc httpProxyHookFunction, authRe
 			return
 		}
 
-		report.Proxies = append(report.Proxies, callerName)
+		report.Proxys = append(report.Proxys, callerName)
 	})
-}
-
-func buildProxyHook(proxyHook httpProxyHookFunction) echo.HandlerFunc {
-	return func(c echo.Context) (err error) {
-		brc := c.(*base.HttpTransportHookRequest)
-
-		var reqBody HttpTransportBody
-		err = c.Bind(&reqBody)
-		if err != nil {
-			return echo.NewHTTPError(http.StatusBadRequest, err.Error())
-		}
-
-		newResp, err := proxyHook(brc, &reqBody)
-		if err != nil {
-			return echo.NewHTTPError(http.StatusBadRequest, err.Error())
-		}
-		resp := map[string]interface{}{
-			"op":       reqBody.Name,
-			"hook":     "proxyHook",
-			"response": map[string]interface{}{},
-		}
-		if newResp != nil {
-			resp["response"].(map[string]interface{})["response"] = newResp
-		}
-		return c.JSON(http.StatusOK, resp)
-	}
 }
