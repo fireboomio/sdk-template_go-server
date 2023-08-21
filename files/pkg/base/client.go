@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/labstack/echo/v4"
 	"net/http"
+	"time"
 )
 
 type (
@@ -81,9 +82,10 @@ type (
 	registeredHook func(echo.Logger)
 	healthFunc     func(*echo.Echo, string, *HealthReport)
 	HealthReport   struct {
-		Customizes []string `json:"customizes"`
-		Functions  []string `json:"functions"`
-		Proxies    []string `json:"proxies"`
+		Customizes []string  `json:"customizes"`
+		Functions  []string  `json:"functions"`
+		Proxies    []string  `json:"proxies"`
+		Time       time.Time `json:"time"`
 	}
 	routerFunc func(e *echo.Echo)
 )
