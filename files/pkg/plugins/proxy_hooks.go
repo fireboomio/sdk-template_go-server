@@ -10,6 +10,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"time"
 )
 
 type httpProxyHookFunction func(*base.HttpTransportHookRequest, *HttpTransportBody) (*base.ClientResponse, error)
@@ -48,5 +49,6 @@ func RegisterProxyHook(hookFunc httpProxyHookFunction, conf ...*HookConfig) {
 		}
 
 		report.Proxys = append(report.Proxys, callerName)
+		report.Time = time.Now()
 	})
 }
