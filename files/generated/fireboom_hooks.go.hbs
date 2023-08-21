@@ -26,7 +26,7 @@ package generated
     {{#each operations}}
         {{#if isMutation}}
         {{upperFirst name}} base.OperationMutationPath = "{{path}}"
-        {{/if}}
+        {{/if~}}
     {{/each}}
     )
 {{/if}}
