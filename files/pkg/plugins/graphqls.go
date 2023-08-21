@@ -19,6 +19,7 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
+	"time"
 
 	"github.com/buger/jsonparser"
 	graphql "github.com/graphql-go/graphql"
@@ -177,6 +178,7 @@ func RegisterGraphql(schema *graphql.Schema) {
 		}
 
 		report.Customizes = append(report.Customizes, callerName)
+		report.Time = time.Now()
 	})
 }
 
