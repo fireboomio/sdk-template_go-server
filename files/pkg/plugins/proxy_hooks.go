@@ -32,7 +32,7 @@ func RegisterProxyHook(hookFunc httpProxyHookFunction, conf ...*HookConfig) {
 			Name: callerName,
 			Path: apiPath,
 		}
-		if len(conf) > 0 {
+		if len(conf) > 0 && conf[0] != nil {
 			operation.AuthenticationConfig = &wgpb.OperationAuthenticationConfig{AuthRequired: conf[0].AuthRequired}
 			operation.AuthorizationConfig = conf[0].AuthorizationConfig
 		}
