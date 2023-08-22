@@ -4,7 +4,7 @@ import (
     "github.com/joho/godotenv"
 {{#with hooksConfiguration}}
     {{~#if authentication}}
-    "custom-go/authentication"
+    authentication "custom-go/authentication"
     {{/if}}
     {{~#if global.httpTransport}}
     "custom-go/global"
