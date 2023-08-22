@@ -2,7 +2,7 @@ package consts
 
 const (
 	CUSTOMIZE       = "customize"
-	FUNCTIONS       = "functions"
+	FUNCTIONS       = "function"
 	PROXY           = "proxy"
 	HTTP_PREFIX     = "http://"
 	INTROSPECT_FILE = "introspect.json"
