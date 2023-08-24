@@ -118,7 +118,7 @@ func configureWunderGraphServer() *echo.Echo {
 	}
 
 	e.Server.BaseContext = func(_ net.Listener) context.Context {
-		healthReport = &base.HealthReport{}
+		healthReport = &base.HealthReport{Time: time.Now()}
 		for _, healthFunc := range base.GetHealthFuncArr() {
 			go healthFunc(e, address, healthReport)
 		}
