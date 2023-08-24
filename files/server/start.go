@@ -9,10 +9,10 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	"github.com/labstack/gommon/log"
+	"net"
 	"net/http"
 	"os"
 	"os/signal"
-	"sync"
 	"syscall"
 	"time"
 
@@ -113,24 +113,24 @@ func configureWunderGraphServer() *echo.Echo {
 		}
 	})
 
-	healthReport = &base.HealthReport{}
-	healthOnce := &sync.Once{}
+	for _, routerFunc := range base.GetEchoRouterFuncArr() {
+		routerFunc(e)
+	}
+
+	e.Server.BaseContext = func(_ net.Listener) context.Context {
+		healthReport = &base.HealthReport{}
+		for _, healthFunc := range base.GetHealthFuncArr() {
+			go healthFunc(e, address, healthReport)
+		}
+		return context.Background()
+	}
 	// 健康检查
 	e.GET("/health", func(c echo.Context) error {
-		healthOnce.Do(func() {
-			for _, healthFunc := range base.GetHealthFuncArr() {
-				healthFunc(e, address, healthReport)
-			}
-		})
 		return c.JSON(http.StatusOK, map[string]interface{}{
 			"status": "ok",
 			"report": healthReport,
 		})
 	})
-
-	for _, routerFunc := range base.GetEchoRouterFuncArr() {
-		routerFunc(e)
-	}
 
 	return e
 }
