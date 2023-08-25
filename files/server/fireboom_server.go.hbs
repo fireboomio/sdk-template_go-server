@@ -30,7 +30,7 @@ import (
 {{#each s3Providers}}
     {{#each uploadProfiles}}
         {{#if (isAnyTrue hooks.preUpload hooks.postUpload)}}
-            {{#if (isAbsent onceMap 'custom-go/generated' (isNotEmpty metadataJSONSchema))}}
+            {{#if (isAbsent onceMap 'custom-go/generated')}}
     "custom-go/generated"
             {{/if}}
     {{fmtSprintf 'storage_%s_%s' name @key}} "{{fmtSprintf 'custom-go/storage/%s/%s' name @key}}"
