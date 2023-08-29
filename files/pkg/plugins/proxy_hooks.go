@@ -14,7 +14,7 @@ import (
 
 type httpProxyHookFunction func(*base.HttpTransportHookRequest, *HttpTransportBody) (*base.ClientResponse, error)
 
-func RegisterProxyHook(hookFunc httpProxyHookFunction, operationType *wgpb.OperationType) {
+func RegisterProxyHook(hookFunc httpProxyHookFunction, operationType ...wgpb.OperationType) {
 
 	callerName := utils.GetCallerName(consts.PROXY)
 	apiPrefixPath := "/" + consts.PROXY
@@ -33,8 +33,8 @@ func RegisterProxyHook(hookFunc httpProxyHookFunction, operationType *wgpb.Opera
 			OperationType: wgpb.OperationType_MUTATION,
 		}
 
-		if operationType != nil {
-			operation.OperationType = *operationType
+		if operationType != nil && len(operationType) > 0 {
+			operation.OperationType = operationType[0]
 		}
 
 		operationBytes, err := json.Marshal(operation)

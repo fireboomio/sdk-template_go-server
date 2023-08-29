@@ -22,7 +22,7 @@ const (
 	DefinitionRefProperty = "$defs"
 )
 
-func RegisterFunction[I, O any](hookFunc func(*base.HookRequest, *base.OperationBody[I, O]) (*base.OperationBody[I, O], error), operationType *wgpb.OperationType) {
+func RegisterFunction[I, O any](hookFunc func(*base.HookRequest, *base.OperationBody[I, O]) (*base.OperationBody[I, O], error), operationType ...wgpb.OperationType) {
 	callerName := utils.GetCallerName(consts.FUNCTIONS)
 	apiPrefixPath := "/" + consts.FUNCTIONS
 	apiPath := path.Join(apiPrefixPath, callerName)
@@ -41,8 +41,8 @@ func RegisterFunction[I, O any](hookFunc func(*base.HookRequest, *base.Operation
 			OperationType: wgpb.OperationType_MUTATION,
 		}
 
-		if operationType != nil {
-			operation.OperationType = *operationType
+		if operationType != nil && len(operationType) > 0 {
+			operation.OperationType = operationType[0]
 		}
 
 		var i I
