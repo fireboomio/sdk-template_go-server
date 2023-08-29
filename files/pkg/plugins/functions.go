@@ -19,7 +19,7 @@ import (
 const (
 	schemaRefPrefix       = "#/$defs/"
 	swaggerRefPrefix      = "#/definitions/"
-	DefinitionRefProperty = "$defs"
+	DefinitionRefProperty = "definitions"
 )
 
 func RegisterFunction[I, O any](hookFunc func(*base.HookRequest, *base.OperationBody[I, O]) (*base.OperationBody[I, O], error), operationType ...wgpb.OperationType) {
