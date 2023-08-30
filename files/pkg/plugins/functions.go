@@ -35,10 +35,16 @@ func RegisterFunction[I, O any](hookFunc func(*base.HookRequest, *base.Operation
 	})
 
 	base.AddHealthFunc(func(e *echo.Echo, s string, report *base.HealthReport) {
-		operation := &wgpb.Operation{
-			Name:          callerName,
-			Path:          apiPath,
-			OperationType: wgpb.OperationType_MUTATION,
+		operationJsonPath := filepath.Join(consts.FUNCTIONS, callerName) + consts.JSON_EXT
+		operation := &wgpb.Operation{}
+
+		// 读文件，保留原有配置，只需更新schema
+		if !utils.NotExistFile(operationJsonPath) {
+			utils.ReadStructAndCacheFile(operationJsonPath, operation)
+		} else {
+			operation.Name = callerName
+			operation.Path = apiPath
+			operation.OperationType = wgpb.OperationType_MUTATION
 		}
 
 		if operationType != nil && len(operationType) > 0 {
@@ -60,7 +66,7 @@ func RegisterFunction[I, O any](hookFunc func(*base.HookRequest, *base.Operation
 			return
 		}
 
-		err = os.WriteFile(filepath.Join(consts.FUNCTIONS, callerName)+consts.JSON_EXT, operationBytes, 0644)
+		err = os.WriteFile(operationJsonPath, operationBytes, 0644)
 		if err != nil {
 			e.Logger.Errorf("write file failed, err: %v", err.Error())
 			return
