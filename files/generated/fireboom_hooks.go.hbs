@@ -1,37 +1,34 @@
 package generated
+
 {{#if operations}}
-    import "custom-go/pkg/base"
+import "custom-go/pkg/base"
 {{/if}}
 
 {{#if operations}}
-    type (
-    {{#each operations}}
-        {{~#if (equalAny engine 1)~}}
-        {{upperFirst name}}Body = *base.OperationBody[{{upperFirst name}}Input, {{upperFirst name}}ResponseData]
-        {{~else if (equalAny engine 2)}}
-        {{~else}}
-        {{upperFirst name}}Body = *base.OperationBody[{{upperFirst name}}InternalInput, {{upperFirst name}}ResponseData]
-        {{/if~}}
-    {{/each}}
-    )
-{{/if}}
+type (
+{{#each operations}}
+    {{~#if (equalAny engine 1)~}}
+    {{upperFirst name}}Body = *base.OperationBody[{{upperFirst name}}Input, {{upperFirst name}}ResponseData]
+    {{~else if (equalAny engine 2)}}
+    {{~else}}
+    {{upperFirst name}}Body = *base.OperationBody[{{upperFirst name}}InternalInput, {{upperFirst name}}ResponseData]
+    {{/if~}}
+{{/each}}
+)
 
-{{#if operations}}
-    const (
-    {{#each operations}}
-        {{#if isQuery}}
-        {{upperFirst name}} base.OperationQueryPath = "{{upperFirst path}}"
-        {{/if~}}
-    {{/each}}
-    )
-{{/if}}
+const (
+{{#each operations}}
+    {{#if isQuery}}
+    {{upperFirst name}} base.OperationQueryPath = "{{upperFirst path}}"
+    {{/if~}}
+{{/each}}
+)
 
-{{#if operations}}
-    const (
-    {{#each operations}}
-        {{#if isMutation}}
-        {{upperFirst name}} base.OperationMutationPath = "{{path}}"
-        {{/if~}}
-    {{/each}}
-    )
+const (
+{{#each operations}}
+    {{#if isMutation}}
+    {{upperFirst name}} base.OperationMutationPath = "{{path}}"
+    {{/if~}}
+{{/each}}
+)
 {{/if}}
