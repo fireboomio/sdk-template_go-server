@@ -52,6 +52,8 @@ func RegisterProxyHook(hookFunc httpProxyHookFunction, operationType ...wgpb.Ope
 			return
 		}
 
+		report.Lock()
+		defer report.Unlock()
 		report.Proxys = append(report.Proxys, callerName)
 	})
 }

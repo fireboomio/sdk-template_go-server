@@ -72,6 +72,8 @@ func RegisterFunction[I, O any](hookFunc func(*base.HookRequest, *base.Operation
 			return
 		}
 
+		report.Lock()
+		defer report.Unlock()
 		report.Functions = append(report.Functions, callerName)
 	})
 }
