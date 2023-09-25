@@ -19,7 +19,7 @@ type (
 const (
 {{#each operations}}
     {{#if isQuery}}
-    {{upperFirst name}} base.OperationQueryPath = "{{upperFirst path}}"
+    {{upperFirst name}} base.OperationQueryPath = "{{path}}"
     {{/if~}}
 {{/each}}
 )
