@@ -114,3 +114,22 @@ func executeInternalRequest[I, OD any](context *base.InternalClientRequestContex
 
 	return *utils.ConvertType[any, OD](&execRes), nil
 }
+
+type Meta[I, O any] struct {
+	Path string
+	Type int
+}
+
+func (m *Meta[I, O]) Execute(input I, context ...*base.InternalClientRequestContext) (O, error) {
+	requestCtx := DefaultInternalClient.Context
+	if len(context) > 0 {
+		requestCtx = context[0]
+	}
+
+	operationDefinitions := DefaultInternalClient.Queries
+	if m.Type == 1 {
+		operationDefinitions = DefaultInternalClient.Mutations
+	}
+
+	return executeInternalRequest[I, O](requestCtx, operationDefinitions, base.OperationPath(m.Path), input)
+}
