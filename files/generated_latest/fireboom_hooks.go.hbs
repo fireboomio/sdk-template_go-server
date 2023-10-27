@@ -5,10 +5,10 @@ import "custom-go/pkg/plugins"
 import "custom-go/generated"
 {{/if}}
 
-const (
+var (
 {{#each operations}}
     {{#unless isSubscription}}
-    var {{upperFirst name}} = &plugins.Meta[generated.{{upperFirst name}}Input, generated.{{upperFirst name}}ResponseData]{"{{path}}", {{type}} }
+    {{upperFirst name}} = &plugins.Meta[generated.{{upperFirst name}}Input, generated.{{upperFirst name}}ResponseData]{"{{path}}", {{type}} }
     {{/unless~}}
 {{/each}}
 )
