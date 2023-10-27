@@ -1,0 +1,15 @@
+package generated
+
+{{#if operations}}
+import "custom-go/pkg/plugins"
+import "custom-go/generated"
+{{/if}}
+
+const (
+{{#each operations}}
+    {{#unless isSubscription}}
+    var {{upperFirst name}} = &plugins.Meta[generated.{{upperFirst name}}Input, generated.{{upperFirst name}}ResponseData]{"{{path}}", {{type}} }
+    {{/unless~}}
+{{/each}}
+)
+
