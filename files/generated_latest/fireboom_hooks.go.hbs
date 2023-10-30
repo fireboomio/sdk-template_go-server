@@ -7,9 +7,9 @@ import "custom-go/generated"
 
 var (
 {{#each operations}}
-    {{#unless isSubscription}}
+    {{#if (isAllTrue (invertBool isSubscription) (equalAny engine '0,1'))}}
     {{upperFirst name}} = &plugins.Meta[generated.{{upperFirst name}}Input, generated.{{upperFirst name}}ResponseData]{"{{path}}", {{type}} }
-    {{/unless~}}
+    {{/if~}}
 {{/each}}
 )
 
