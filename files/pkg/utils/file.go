@@ -7,6 +7,7 @@ import (
 	"reflect"
 	"runtime"
 	"strings"
+	"sync"
 )
 
 type fileCache struct {
@@ -14,37 +15,37 @@ type fileCache struct {
 	content []byte
 }
 
-var fileCacheMap map[string]*fileCache
+var fileCacheMap = &sync.Map{}
 
-func ReadBytesAndCacheFile(path string) ([]byte, error) {
-	if nil == fileCacheMap {
-		fileCacheMap = make(map[string]*fileCache)
-	}
-
+func ReadBytesAndCacheFile(path string) (content []byte, err error) {
 	fileInfo, err := os.Stat(path)
 	if nil != err {
-		return nil, err
+		return
 	}
 
-	cache := fileCacheMap[path]
-	if nil == cache {
-		content, err := os.ReadFile(path)
-		if nil != err {
-			return nil, err
+	value, ok := fileCacheMap.Load(path)
+	if ok {
+		cache := value.(*fileCache)
+		if reflect.DeepEqual(cache.info.ModTime(), fileInfo.ModTime()) {
+			content = cache.content
+			return
 		}
 
-		cache = &fileCache{fileInfo, content}
-		fileCacheMap[path] = cache
-	} else if !reflect.DeepEqual(cache.info.ModTime(), fileInfo.ModTime()) {
-		content, err := os.ReadFile(path)
-		if nil != err {
-			return nil, err
+		if content, err = os.ReadFile(path); err != nil {
+			return
 		}
 
 		cache.info = fileInfo
 		cache.content = content
+		return
 	}
-	return cache.content, nil
+
+	if content, err = os.ReadFile(path); err != nil {
+		return
+	}
+
+	fileCacheMap.Store(path, &fileCache{fileInfo, content})
+	return
 }
 
 func ReadStructAndCacheFile(path string, result interface{}) error {
