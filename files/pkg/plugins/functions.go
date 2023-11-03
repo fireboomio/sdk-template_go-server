@@ -113,6 +113,11 @@ func parseJsonschemaToSwaggerSchema(schema *jsonschema.Schema) (result *openapi3
 		Required: schema.Required,
 	}}
 
+	if enum := schema.Enum; enum != nil {
+		result.Value.Enum = enum
+		return
+	}
+
 	if schema.Items != nil {
 		result.Value.Items = parseJsonschemaToSwaggerSchema(schema.Items)
 		return
