@@ -2,10 +2,6 @@ package base
 
 import "encoding/json"
 
-type CustomClaims interface {
-	map[string]any | any
-}
-
 type WunderGraphUser[Role string | int] struct {
 	Provider          string          `json:"provider,omitempty"`
 	ProviderId        string          `json:"providerId,omitempty"`
@@ -28,7 +24,7 @@ type WunderGraphUser[Role string | int] struct {
 	Location          string          `json:"location,omitempty"`
 	Roles             []Role          `json:"roles,omitempty"`
 	CustomAttributes  []string        `json:"customAttributes,omitempty"`
-	CustomClaims      CustomClaims    `json:"customClaims,omitempty"`
+	CustomClaims      map[string]any  `json:"customClaims,omitempty"`
 	AccessToken       json.RawMessage `json:"accessToken,omitempty"`
 	RawAccessToken    string          `json:"rawAccessToken,omitempty"`
 	IdToken           json.RawMessage `json:"idToken,omitempty"`
