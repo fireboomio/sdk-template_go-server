@@ -64,5 +64,5 @@ func GetOssUrl(provider, key string) string {
 	if config.UseSSL {
 		ssl = "s"
 	}
-	return fmt.Sprintf("http%s://%s.%s/%s", ssl, config.BucketName, config.Endpoint, key)
+	return fmt.Sprintf("http%s://%s.%s/%s", ssl, utils.GetConfigurationVal(config.BucketName), utils.GetConfigurationVal(config.Endpoint), key)
 }
