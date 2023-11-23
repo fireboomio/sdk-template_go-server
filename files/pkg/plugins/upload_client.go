@@ -1,0 +1,93 @@
+package plugins
+
+import (
+	"bytes"
+	"encoding/json"
+	"fmt"
+	"io"
+	"mime/multipart"
+	"net/http"
+	"time"
+)
+
+type (
+	UploadProfile   string
+	UploadMetadata  interface{}
+	UploadParameter struct {
+		Directory string
+		Profile   UploadProfile
+		Metadata  UploadMetadata
+		File      io.Reader
+		Filename  string
+	}
+	UploadResponse []struct {
+		Key string `json:"key"`
+	}
+	UploadClient struct {
+		Name string
+	}
+)
+
+var (
+	baseNodeUrl string
+	httpClient  = &http.Client{Timeout: 10 * time.Second}
+)
+
+func SetBaseNodeUrl(url string) {
+	baseNodeUrl = url
+}
+
+func (u *UploadClient) Upload(parameter *UploadParameter) (uploadResp UploadResponse, err error) {
+	body := new(bytes.Buffer)
+
+	writer := multipart.NewWriter(body)
+	formFile, err := writer.CreateFormFile("file", parameter.Filename)
+	if err != nil {
+		return
+	}
+
+	if _, err = io.Copy(formFile, parameter.File); err != nil {
+		return
+	}
+
+	if err = writer.Close(); err != nil {
+		return
+	}
+
+	uploadPath := baseNodeUrl + fmt.Sprintf("/s3/%s/upload", u.Name)
+	if len(parameter.Directory) > 0 {
+		uploadPath += "?directory=" + parameter.Directory
+	}
+	req, err := http.NewRequest("POST", uploadPath, body)
+	if err != nil {
+		return
+	}
+
+	req.Header.Add("Content-Type", writer.FormDataContentType())
+	if len(parameter.Profile) > 0 {
+		req.Header.Add("X-Upload-Profile", string(parameter.Profile))
+	}
+	if parameter.Metadata != nil {
+		metadataBytes, _ := json.Marshal(parameter.Metadata)
+		req.Header.Add("X-Metadata", string(metadataBytes))
+	}
+
+	resp, err := httpClient.Do(req)
+	if err != nil {
+		return
+	}
+	defer func() { _ = resp.Body.Close() }()
+
+	content, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return
+	}
+
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		err = fmt.Errorf("%d: %s", resp.StatusCode, string(content))
+		return
+	}
+
+	err = json.Unmarshal(content, &uploadResp)
+	return
+}

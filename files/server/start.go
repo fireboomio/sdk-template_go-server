@@ -58,6 +58,7 @@ func configureWunderGraphServer() *echo.Echo {
 
 	var internalQueries, internalMutations base.OperationDefinitions
 	nodeUrl := utils.GetConfigurationVal(types.WdgGraphConfig.Api.NodeOptions.NodeUrl)
+	plugins.SetBaseNodeUrl(nodeUrl)
 	queryOperations := filterOperationsHooks(types.WdgGraphConfig.Api.Operations, wgpb.OperationType_QUERY)
 	if queryLen := len(queryOperations); queryLen > 0 {
 		internalQueries = plugins.BuildInternalRequest(e.Logger, nodeUrl, queryOperations)

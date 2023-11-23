@@ -13,3 +13,16 @@ var (
 {{/each}}
 )
 
+var (
+{{#each s3Providers}}
+    UploadClient_{{name}} = &plugins.UploadClient{"{{name}}"}
+{{/each}}
+)
+
+const (
+{{#each s3Providers}}
+    {{#each uploadProfiles as |profile key|}}
+    UploadClient_{{name}}_{{key}} plugins.UploadProfile = "{{key}}"
+    {{/each}}
+{{/each}}
+)

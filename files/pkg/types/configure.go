@@ -3,6 +3,7 @@ package types
 import (
 	"custom-go/pkg/utils"
 	"custom-go/pkg/wgpb"
+	"fmt"
 	"golang.org/x/exp/slices"
 	"path/filepath"
 )
@@ -51,4 +52,17 @@ func GetS3ConfigByProvider(provider string) *wgpb.S3UploadConfiguration {
 		return s3Arr[index]
 	}
 	return nil
+}
+
+func GetOssUrl(provider, key string) string {
+	config := GetS3ConfigByProvider(provider)
+	if config == nil {
+		return ""
+	}
+
+	var ssl string
+	if config.UseSSL {
+		ssl = "s"
+	}
+	return fmt.Sprintf("http%s://%s.%s/%s", ssl, config.BucketName, config.Endpoint, key)
 }
