@@ -17,8 +17,11 @@ type (
 		Directory string
 		Profile   UploadProfile
 		Metadata  UploadMetadata
-		File      io.Reader
-		Filename  string
+		Files     []*UploadFile
+	}
+	UploadFile struct {
+		Reader io.Reader
+		Name   string
 	}
 	UploadResponse []struct {
 		Key string `json:"key"`
@@ -41,13 +44,16 @@ func (u *UploadClient) Upload(parameter *UploadParameter) (uploadResp UploadResp
 	body := new(bytes.Buffer)
 
 	writer := multipart.NewWriter(body)
-	formFile, err := writer.CreateFormFile("file", parameter.Filename)
-	if err != nil {
-		return
-	}
+	for _, item := range parameter.Files {
+		var formFile io.Writer
+		formFile, err = writer.CreateFormFile("file", item.Name)
+		if err != nil {
+			return
+		}
 
-	if _, err = io.Copy(formFile, parameter.File); err != nil {
-		return
+		if _, err = io.Copy(formFile, item.Reader); err != nil {
+			return
+		}
 	}
 
 	if err = writer.Close(); err != nil {

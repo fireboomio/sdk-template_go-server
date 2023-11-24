@@ -1,6 +1,7 @@
 package types
 
 import (
+	"custom-go/pkg/plugins"
 	"custom-go/pkg/utils"
 	"custom-go/pkg/wgpb"
 	"fmt"
@@ -54,15 +55,19 @@ func GetS3ConfigByProvider(provider string) *wgpb.S3UploadConfiguration {
 	return nil
 }
 
-func GetOssUrl(provider, key string) string {
+func GetOssUrl(provider string, response plugins.UploadResponse) (result []string) {
 	config := GetS3ConfigByProvider(provider)
 	if config == nil {
-		return ""
+		return nil
 	}
 
 	var ssl string
 	if config.UseSSL {
 		ssl = "s"
 	}
-	return fmt.Sprintf("http%s://%s.%s/%s", ssl, utils.GetConfigurationVal(config.BucketName), utils.GetConfigurationVal(config.Endpoint), key)
+	baseUrl := fmt.Sprintf("http%s://%s.%s/", ssl, utils.GetConfigurationVal(config.BucketName), utils.GetConfigurationVal(config.Endpoint))
+	for _, item := range response {
+		result = append(result, baseUrl+item.Key)
+	}
+	return
 }
