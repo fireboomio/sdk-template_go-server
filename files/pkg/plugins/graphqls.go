@@ -173,7 +173,7 @@ func RegisterGraphql(schema *graphql.Schema) {
 		}
 
 		if errorMsg := gjson.GetBytes(respBody, graphqlResultErrorsPath); errorMsg.Exists() {
-			e.Logger.Error(err.Error())
+			e.Logger.Error(errorMsg.String())
 			return
 		}
 		res := gjson.GetBytes(respBody, graphqlResultDataPath).String()
@@ -317,7 +317,7 @@ func HandleSSEReader(eventStream io.ReadCloser, grc *base.GraphqlRequestContext,
 	sseChan := grc.Result
 
 	go func() {
-		defer eventStream.Close()
+		defer func() { _ = eventStream.Close() }()
 		reader := sse.NewEventStreamReader(eventStream, math.MaxInt)
 		for {
 			msg, err := reader.ReadEvent()
@@ -326,6 +326,7 @@ func HandleSSEReader(eventStream io.ReadCloser, grc *base.GraphqlRequestContext,
 					return
 				}
 
+				grc.Logger.Infof("sse error: %s", err.Error())
 				sseChan.Error <- []byte(internalError)
 				return
 			}
