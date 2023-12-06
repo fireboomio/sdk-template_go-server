@@ -10,6 +10,10 @@ type OperationBody[I, O any] struct {
 	SetClientRequestHeaders map[string]string         `json:"setClientRequestHeaders,omitempty"`
 }
 
+func (o *OperationBody[I, O]) ResetResponse() {
+	o.Response = &OperationBodyResponse[O]{}
+}
+
 type GraphQLError struct {
 	Message string `json:"message"`
 	Path    []any  `json:"path"`
