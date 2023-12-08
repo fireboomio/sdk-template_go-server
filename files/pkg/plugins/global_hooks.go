@@ -25,6 +25,7 @@ type WsTransportBody struct {
 
 type HttpTransportHooks struct {
 	BeforeOriginRequest func(*base.HttpTransportHookRequest, *HttpTransportBody) (*base.ClientRequest, error)
+	AfterOriginResponse func(*base.HttpTransportHookRequest, *HttpTransportBody) (*base.ClientResponse, error)
 	OnOriginRequest     func(*base.HttpTransportHookRequest, *HttpTransportBody) (*base.ClientRequest, error)
 	OnOriginResponse    func(*base.HttpTransportHookRequest, *HttpTransportBody) (*base.ClientResponse, error)
 }
@@ -56,6 +57,33 @@ func RegisterGlobalHooks(e *echo.Echo, globalHooks GlobalConfiguration) {
 			}
 			if newReq != nil {
 				resp["response"].(map[string]interface{})["request"] = newReq
+			}
+			return c.JSON(http.StatusOK, resp)
+		})
+	}
+
+	if globalHooks.HttpTransport.AfterOriginResponse != nil {
+		apiPath := "/global/httpTransport/afterOriginResponse"
+		e.Logger.Debugf(`Registered globalHook [%s]`, apiPath)
+		e.POST(apiPath, func(c echo.Context) error {
+			brc := c.(*base.HttpTransportHookRequest)
+			var respBody HttpTransportBody
+			err := c.Bind(&respBody)
+			if err != nil {
+				return echo.NewHTTPError(http.StatusBadRequest, err.Error())
+			}
+
+			newResp, err := globalHooks.HttpTransport.AfterOriginResponse(brc, &respBody)
+			if err != nil {
+				return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
+			}
+			resp := map[string]interface{}{
+				"op":       respBody.Name,
+				"hook":     "onOriginResponse",
+				"response": map[string]interface{}{},
+			}
+			if newResp != nil {
+				resp["response"].(map[string]interface{})["response"] = newResp
 			}
 			return c.JSON(http.StatusOK, resp)
 		})
