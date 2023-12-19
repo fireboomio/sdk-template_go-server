@@ -99,6 +99,18 @@ func BuildSchema(schema *jsonschema.Schema) string {
 	return res
 }
 
+func FetchSchemaDefinitions(schema *jsonschema.Schema) (schemaRef *openapi3.SchemaRef, defs openapi3.Schemas) {
+	defs = make(openapi3.Schemas)
+	for name, internalSchema := range schema.Definitions {
+		defs[name] = parseJsonschemaToSwaggerSchema(internalSchema)
+	}
+
+	refStr := strings.TrimPrefix(schema.Ref, "#/$defs/")
+	schemaRef = defs[refStr]
+	delete(defs, refStr)
+	return
+}
+
 func parseJsonschemaToSwaggerSchema(schema *jsonschema.Schema) (result *openapi3.SchemaRef) {
 	if schema.Ref != "" {
 		result = openapi3.NewSchemaRef(strings.ReplaceAll(schema.Ref, schemaRefPrefix, swaggerRefPrefix), nil)
