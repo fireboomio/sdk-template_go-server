@@ -14,13 +14,13 @@ import (
     "custom-go/generated"
         {{/if}}
         {{#each queries as |operationConf operationName|}}
-    operation_{{replaceSpecial (upperFirst operationName) "__"}} "custom-go/operation/{{operationName}}"
+    operation_{{replaceSpecial operationName "__"}} "custom-go/operation/{{operationName}}"
         {{/each}}
         {{#each mutations as |operationConf operationName|}}
-    operation_{{replaceSpecial (upperFirst operationName) "__"}} "custom-go/operation/{{operationName}}"
+    operation_{{replaceSpecial operationName "__"}} "custom-go/operation/{{operationName}}"
         {{/each}}
         {{#each subscriptions as |operationConf operationName|}}
-    operation_{{replaceSpecial (upperFirst operationName) "__"}} "custom-go/operation/{{operationName}}"
+    operation_{{replaceSpecial operationName "__"}} "custom-go/operation/{{operationName}}"
         {{/each}}
     {{/if}}
 {{/with}}
@@ -70,7 +70,7 @@ func init() {
         {{#each queries as |hooks operationName|}}
                 "{{operationName}}": {
             {{#each hooks}}
-                    {{upperFirst this}}: plugins.ConvertBodyFunc[generated.{{replaceSpecial (upperFirst operationName) "__"}}InternalInput, generated.{{replaceSpecial (upperFirst operationName) "__"}}ResponseData](operation_{{replaceSpecial (upperFirst operationName) "__"}}.{{upperFirst this}}),
+                    {{upperFirst this}}: plugins.ConvertBodyFunc[generated.{{replaceSpecial (upperFirst operationName) "__"}}InternalInput, generated.{{replaceSpecial (upperFirst operationName) "__"}}ResponseData](operation_{{replaceSpecial operationName "__"}}.{{upperFirst this}}),
             {{/each}}
                 },
         {{/each}}
