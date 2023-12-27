@@ -145,16 +145,10 @@ func RegisterGraphql(schema *graphql.Schema) {
 
 			if hasSubscriptionFieldResolveFn && strings.HasPrefix(body.Query, "subscription") {
 				result := graphql.Subscribe(param)
-				for k, v := range grc.ResponseHeader {
-					c.Response().Header().Set(k, v)
-				}
 				return handleSSEFromChan(brc, result)
 			}
 
 			result := graphql.Do(param)
-			for k, v := range grc.ResponseHeader {
-				c.Response().Header().Set(k, v)
-			}
 			if grc.Result != nil {
 				return handleSSE(brc, grc.Result)
 			}
