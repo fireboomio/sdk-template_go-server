@@ -57,6 +57,7 @@ type GraphqlRequestContext struct {
 	Logger         echo.Logger
 	Result         *ResultChan
 	Request        *http.Request
+	ResponseHeader map[string]string
 }
 
 type ResultChan struct {

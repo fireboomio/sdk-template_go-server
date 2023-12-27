@@ -145,10 +145,16 @@ func RegisterGraphql(schema *graphql.Schema) {
 
 			if hasSubscriptionFieldResolveFn && strings.HasPrefix(body.Query, "subscription") {
 				result := graphql.Subscribe(param)
+				for k, v := range grc.ResponseHeader {
+					c.Response().Header().Set(k, v)
+				}
 				return handleSSEFromChan(brc, result)
 			}
 
 			result := graphql.Do(param)
+			for k, v := range grc.ResponseHeader {
+				c.Response().Header().Set(k, v)
+			}
 			if grc.Result != nil {
 				return handleSSE(brc, grc.Result)
 			}
@@ -308,7 +314,7 @@ func ResolveParamsToStruct(params graphql.ResolveParams, input any) error {
 	return json.Unmarshal(argsBytes, &input)
 }
 
-func HandleSSEReader(eventStream io.ReadCloser, grc *base.GraphqlRequestContext, handle func([]byte) ([]byte, bool)) {
+func HandleSSEReader(eventStream io.ReadCloser, grc *base.GraphqlRequestContext, handle func([]byte, bool) ([]byte, bool)) {
 	grc.Result = &base.ResultChan{
 		Data:  make(chan []byte),
 		Error: make(chan []byte),
@@ -320,96 +326,104 @@ func HandleSSEReader(eventStream io.ReadCloser, grc *base.GraphqlRequestContext,
 		defer func() { _ = eventStream.Close() }()
 		reader := sse.NewEventStreamReader(eventStream, math.MaxInt)
 		for {
-			msg, err := reader.ReadEvent()
-			if err != nil {
-				if err == io.EOF {
+			select {
+			case <-grc.Context.Done():
+				if nil != handle {
+					handle(nil, true)
+				}
+			default:
+				msg, err := reader.ReadEvent()
+				if err != nil {
+					if err == io.EOF {
+						return
+					}
+
+					grc.Logger.Infof("sse error: %s", err.Error())
+					sseChan.Error <- []byte(internalError)
 					return
 				}
 
-				grc.Logger.Infof("sse error: %s", err.Error())
-				sseChan.Error <- []byte(internalError)
-				return
-			}
+				if len(msg) == 0 {
+					continue
+				}
 
-			if len(msg) == 0 {
-				continue
-			}
+				// normalize the crlf to lf to make it easier to split the lines.
+				// split the line by "\n" or "\r", per the spec.
+				lines := bytes.FieldsFunc(msg, func(r rune) bool { return r == '\n' || r == '\r' })
+				for _, line := range lines {
+					switch {
+					case bytes.HasPrefix(line, headerData):
+						data := trim(line[len(headerData):])
 
-			// normalize the crlf to lf to make it easier to split the lines.
-			// split the line by "\n" or "\r", per the spec.
-			lines := bytes.FieldsFunc(msg, func(r rune) bool { return r == '\n' || r == '\r' })
-			for _, line := range lines {
-				switch {
-				case bytes.HasPrefix(line, headerData):
-					data := trim(line[len(headerData):])
-
-					if len(data) == 0 {
-						continue
-					}
-
-					if nil != handle {
-						afterData, done := handle(data)
-						if done {
-							return
-						}
-						if len(afterData) == 0 {
+						if len(data) == 0 {
 							continue
 						}
-						data = afterData
-					}
-					sseChan.Data <- data
-				case bytes.HasPrefix(line, headerEvent):
-					event := trim(line[len(headerEvent):])
 
-					switch {
-					case bytes.Equal(event, eventTypeComplete):
-						return
-					case bytes.Equal(event, eventTypeNext):
-						continue
-					}
-				case bytes.HasPrefix(msg, []byte(":")):
-					// according to the spec, we ignore messages starting with a colon
-					continue
-				default:
-					// ideally we should not get here, or if we do, we should ignore it
-					// but some providers send a json object with the error messages, without the event header
-
-					// check for errors which came without event header
-					data := trim(line)
-
-					val, valueType, _, err := jsonparser.Get(data, "errors")
-					switch err {
-					case jsonparser.KeyPathNotFoundError:
-						continue
-					case jsonparser.MalformedJsonError:
-						// ignore garbage
-						continue
-					case nil:
-						if valueType == jsonparser.Array {
-							response := []byte(`{}`)
-							response, err = jsonparser.Set(response, val, "errors")
-							if err != nil {
-								sseChan.Error <- []byte(err.Error())
+						if nil != handle {
+							afterData, done := handle(data, false)
+							if done {
+								sseChan.Done <- data
 								return
 							}
+							if len(afterData) == 0 {
+								continue
+							}
+							data = afterData
+						}
+						sseChan.Data <- data
+					case bytes.HasPrefix(line, headerEvent):
+						event := trim(line[len(headerEvent):])
 
-							sseChan.Error <- response
+						switch {
+						case bytes.Equal(event, eventTypeComplete):
 							return
-						} else if valueType == jsonparser.Object {
-							response := []byte(`{"errors":[]}`)
-							response, err = jsonparser.Set(response, val, "errors", "[0]")
-							if err != nil {
-								sseChan.Error <- []byte(err.Error())
+						case bytes.Equal(event, eventTypeNext):
+							continue
+						}
+					case bytes.HasPrefix(msg, []byte(":")):
+						// according to the spec, we ignore messages starting with a colon
+						continue
+					default:
+						// ideally we should not get here, or if we do, we should ignore it
+						// but some providers send a json object with the error messages, without the event header
+
+						// check for errors which came without event header
+						data := trim(line)
+
+						val, valueType, _, err := jsonparser.Get(data, "errors")
+						switch err {
+						case jsonparser.KeyPathNotFoundError:
+							continue
+						case jsonparser.MalformedJsonError:
+							// ignore garbage
+							continue
+						case nil:
+							if valueType == jsonparser.Array {
+								response := []byte(`{}`)
+								response, err = jsonparser.Set(response, val, "errors")
+								if err != nil {
+									sseChan.Error <- []byte(err.Error())
+									return
+								}
+
+								sseChan.Error <- response
+								return
+							} else if valueType == jsonparser.Object {
+								response := []byte(`{"errors":[]}`)
+								response, err = jsonparser.Set(response, val, "errors", "[0]")
+								if err != nil {
+									sseChan.Error <- []byte(err.Error())
+									return
+								}
+
+								sseChan.Error <- response
 								return
 							}
 
-							sseChan.Error <- response
+						default:
+							sseChan.Error <- []byte(internalError)
 							return
 						}
-
-					default:
-						sseChan.Error <- []byte(internalError)
-						return
 					}
 				}
 			}
