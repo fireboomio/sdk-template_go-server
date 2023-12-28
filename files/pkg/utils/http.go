@@ -57,7 +57,7 @@ func HttpPost(url string, reqBody []byte, headers map[string]string, timeout ...
 		r.Header.Add(k, v)
 	}
 
-	client := http.DefaultClient
+	client := &http.Client{}
 	if len(timeout) > 0 {
 		client.Timeout = time.Duration(timeout[0]) * time.Second
 	}
