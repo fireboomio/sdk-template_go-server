@@ -361,6 +361,7 @@ func HandleSSEReader(eventStream io.ReadCloser, grc *base.GraphqlRequestContext,
 								return
 							}
 							if done {
+								sseChan.Data <- data
 								sseChan.Done <- data
 								return
 							}
