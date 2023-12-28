@@ -308,7 +308,7 @@ func ResolveParamsToStruct(params graphql.ResolveParams, input any) error {
 	return json.Unmarshal(argsBytes, &input)
 }
 
-func HandleSSEReader(eventStream io.ReadCloser, grc *base.GraphqlRequestContext, handle func([]byte, bool) ([]byte, bool)) {
+func HandleSSEReader(eventStream io.ReadCloser, grc *base.GraphqlRequestContext, handle func([]byte, bool) ([]byte, bool, error)) {
 	grc.Result = &base.ResultChan{
 		Data:  make(chan []byte),
 		Error: make(chan []byte),
@@ -323,7 +323,7 @@ func HandleSSEReader(eventStream io.ReadCloser, grc *base.GraphqlRequestContext,
 			select {
 			case <-grc.Context.Done():
 				if nil != handle {
-					handle(nil, true)
+					_, _, _ = handle(nil, true)
 				}
 				return
 			default:
@@ -355,7 +355,11 @@ func HandleSSEReader(eventStream io.ReadCloser, grc *base.GraphqlRequestContext,
 						}
 
 						if nil != handle {
-							afterData, done := handle(data, false)
+							afterData, done, handleErr := handle(data, false)
+							if handleErr != nil {
+								sseChan.Error <- []byte(internalError)
+								return
+							}
 							if done {
 								sseChan.Done <- data
 								return
