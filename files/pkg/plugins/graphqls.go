@@ -324,8 +324,8 @@ func HandleSSEReader(eventStream io.ReadCloser, grc *base.GraphqlRequestContext,
 			case <-grc.Context.Done():
 				if nil != handle {
 					handle(nil, true)
-					return
 				}
+				return
 			default:
 				msg, err := reader.ReadEvent()
 				if err != nil {
