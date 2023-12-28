@@ -1,0 +1,9 @@
+{{~#if typeRefObject~}}
+    {{#if typeRefObject.isDefinition}}{{#unless typeRefObject.additional}}*{{/unless}}{{/if}}{{~upperFirst (joinString '_' typeRefObject.documentPath)~}}
+{{~else~}}
+    {{~#if typeRefEnum~}}
+        {{~upperFirst typeRefEnum.name~}}
+    {{~else~}}
+        {{~> field_type_simple typeName=typeName typeFormat=typeFormat}}
+    {{~/if}}
+{{~/if}}

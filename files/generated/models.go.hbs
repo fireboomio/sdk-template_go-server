@@ -1,24 +1,15 @@
 package generated
 
 {{#each objectFieldArray}}
-type {{upperFirst (joinString '_' documentPath)}} struct {
+type {{upperFirst (joinString '_' documentPath)~}}
+{{~#if additional}} {{#equal typeName 'array'}}[]{{else}}map[string]{{/equal~}}
+    {{~#with additional}}{{~> field_type this=this}}{{/with~}}
+{{~else}} struct {
     {{#each fields}}
     {{upperFirst (trimPrefix name '_')}} {{#if isArray}}[]{{~/if~}}
-    {{~#if typeRefObject~}}
-        {{#if typeRefObject.isDefinition}}*{{/if}}{{~upperFirst (joinString '_' typeRefObject.documentPath)~}}
-    {{~else~}}
-        {{~#if typeRefEnum~}}
-            {{~upperFirst typeRefEnum.name~}}
-        {{~else~}}
-            {{~#equal typeName 'string'}}string{{/equal~}}
-            {{~#equal typeName 'integer'}}int64{{/equal~}}
-            {{~#equal typeName 'number'}}float64{{/equal~}}
-            {{~#equal typeName 'boolean'}}bool{{/equal~}}
-            {{~#equal typeName ''}}any{{/equal~}}
-        {{~/if}}
-    {{~/if}} `json:"{{name}}{{#unless required}},omitempty{{/unless}}"`
+    {{~> field_type this=this}} `json:"{{name}}{{#unless required}},omitempty{{/unless}}"`
     {{/each}}
-}
+}{{/if}}
 {{/each}}
 
 {{#each enumFieldArray}}
