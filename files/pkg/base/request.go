@@ -44,7 +44,7 @@ func (r *ClientResponse) Header() http.Header {
 }
 
 func (r *ClientResponse) Write(i []byte) (int, error) {
-	r.OriginBody = i
+	r.OriginBody = append(r.OriginBody, i...)
 	return len(i), nil
 }
 
