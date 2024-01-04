@@ -1,13 +1,14 @@
 package generated
 
 {{#each objectFieldArray}}
+{{#if description}}// {{description}}{{/if}}
 type {{upperFirst (joinString '_' documentPath)~}}
 {{~#if additional}} {{#equal typeName 'array'}}[]{{else}}map[string]{{/equal~}}
     {{~#with additional}}{{~> field_type this=this}}{{/with~}}
 {{~else}} struct {
     {{#each fields}}
     {{upperFirst (trimPrefix name '_')}} {{#if isArray}}[]{{~/if~}}
-    {{~> field_type this=this}} `json:"{{name}}{{#unless required}},omitempty{{/unless}}"`
+    {{~> field_type this=this}} `json:"{{name}}{{#unless required}},omitempty{{/unless}}"`{{#if description}} // {{description}}{{/if}}
     {{/each}}
 }{{/if}}
 {{/each}}
