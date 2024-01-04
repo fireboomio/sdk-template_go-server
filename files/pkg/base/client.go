@@ -22,7 +22,7 @@ type InternalRequestFunction func(*InternalClientRequestContext, OperationArgsWi
 
 type InternalClientFactory func(map[string]string, ClientRequest) *InternalClient
 
-func InternalClientFactoryCall(headers map[string]string, clientRequest *ClientRequest, user *WunderGraphUser[string]) *InternalClient {
+func InternalClientFactoryCall(headers map[string]string, clientRequest *ClientRequest, user *WunderGraphUser) *InternalClient {
 	client := &InternalClient{
 		Context: &InternalClientRequestContext{
 			ExtraHeaders:  headers,
@@ -40,7 +40,7 @@ func InternalClientFactoryCall(headers map[string]string, clientRequest *ClientR
 type InternalClientRequestContext struct {
 	ExtraHeaders  map[string]string
 	ClientRequest *ClientRequest
-	User          *WunderGraphUser[string]
+	User          *WunderGraphUser
 }
 
 type InternalClient struct {
@@ -52,7 +52,7 @@ type InternalClient struct {
 
 type GraphqlRequestContext struct {
 	context.Context
-	User           *WunderGraphUser[string]
+	User           *WunderGraphUser
 	InternalClient *InternalClient
 	Logger         echo.Logger
 	Result         *ResultChan
@@ -67,7 +67,7 @@ type ResultChan struct {
 
 type BaseRequestContext struct {
 	echo.Context
-	User           *WunderGraphUser[string]
+	User           *WunderGraphUser
 	InternalClient *InternalClient
 	Headers        map[string]string
 }

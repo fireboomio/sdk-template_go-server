@@ -2,7 +2,7 @@ package base
 
 import "encoding/json"
 
-type WunderGraphUser[Role string | int] struct {
+type WunderGraphUser struct {
 	Provider          string          `json:"provider,omitempty"`
 	ProviderId        string          `json:"providerId,omitempty"`
 	UserId            string          `json:"userId,omitempty"`
@@ -22,7 +22,7 @@ type WunderGraphUser[Role string | int] struct {
 	ZoneInfo          string          `json:"zoneInfo,omitempty"`
 	Locale            string          `json:"locale,omitempty"`
 	Location          string          `json:"location,omitempty"`
-	Roles             []Role          `json:"roles,omitempty"`
+	Roles             []string        `json:"roles,omitempty"`
 	CustomAttributes  []string        `json:"customAttributes,omitempty"`
 	CustomClaims      map[string]any  `json:"customClaims,omitempty"`
 	AccessToken       json.RawMessage `json:"accessToken,omitempty"`

@@ -11,9 +11,9 @@ import (
 )
 
 type AuthenticationResponse struct {
-	Message string                        `json:"message"`
-	Status  string                        `json:"status"`
-	User    *base.WunderGraphUser[string] `json:"user"`
+	Message string                `json:"message"`
+	Status  string                `json:"status"`
+	User    *base.WunderGraphUser `json:"user"`
 }
 
 type AuthenticationConfiguration struct {

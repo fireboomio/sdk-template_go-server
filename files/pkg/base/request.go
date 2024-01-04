@@ -13,8 +13,8 @@ type BaseRequestBody struct {
 }
 
 type BaseRequestBodyWg struct {
-	ClientRequest *ClientRequest           `json:"clientRequest"`
-	User          *WunderGraphUser[string] `json:"user"`
+	ClientRequest *ClientRequest   `json:"clientRequest"`
+	User          *WunderGraphUser `json:"user"`
 }
 
 type ClientRequest struct {
