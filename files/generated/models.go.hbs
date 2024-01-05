@@ -1,23 +1,25 @@
 package generated
 
 {{#each objectFieldArray}}
-{{#if description}}// {{description}}{{/if}}
+{{#if description}}// {{upperFirst (joinString '_' documentPath)}}
+/*  {{description}} */{{/if}}
 type {{upperFirst (joinString '_' documentPath)~}}
 {{~#if additional}} {{#equal typeName 'array'}}[]{{else}}map[string]{{/equal~}}
-    {{~#with additional}}{{~> field_type this=this}}{{/with~}}
+{{~#with additional}}{{~> field_type this=this}}{{/with~}}
 {{~else}} struct {
-    {{#each fields}}
-    {{upperFirst (trimPrefix name '_')}} {{#if isArray}}[]{{~/if~}}
-    {{~> field_type this=this}} `json:"{{name}}{{#unless required}},omitempty{{/unless}}"`{{#if description}} // {{description}}{{/if}}
-    {{/each}}
+{{#each fields}}
+    {{#if description}}/* {{description}} */
+{{/if}}{{upperFirst (trimPrefix name '_')}} {{#if isArray}}[]{{~/if~}}
+{{~> field_type this=this}} `json:"{{name}}{{#unless required}},omitempty{{/unless}}"`
+{{/each}}
 }{{/if}}
 {{/each}}
 
 {{#each enumFieldArray}}
 type {{upperFirst name}} string
 const (
-    {{#each values}}
+{{#each values}}
     {{upperFirst name}}_{{this}} {{upperFirst name}} = "{{this}}"
-    {{/each}}
+{{/each}}
 )
 {{/each}}
