@@ -102,7 +102,9 @@ func configureWunderGraphServer() *echo.Echo {
 				}
 			} else {
 				for name, value := range body.Wg.ClientRequest.Headers {
-					c.Request().Header.Set(name, value)
+					if _, ok := c.Request().Header[name]; !ok {
+						c.Request().Header.Set(name, value)
+					}
 				}
 			}
 			reqId := c.Request().Header.Get("x-request-id")
