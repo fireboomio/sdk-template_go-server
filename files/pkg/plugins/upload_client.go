@@ -32,8 +32,8 @@ type (
 )
 
 var (
-	baseNodeUrl string
-	httpClient  = &http.Client{Timeout: 10 * time.Second}
+	baseNodeUrl      string
+	uploadHttpClient = http.Client{Timeout: 30 * time.Second}
 )
 
 func SetBaseNodeUrl(url string) {
@@ -78,7 +78,7 @@ func (u *UploadClient) Upload(parameter *UploadParameter) (uploadResp UploadResp
 		req.Header.Add("X-Metadata", string(metadataBytes))
 	}
 
-	resp, err := httpClient.Do(req)
+	resp, err := uploadHttpClient.Do(req)
 	if err != nil {
 		return
 	}
