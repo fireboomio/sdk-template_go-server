@@ -13,6 +13,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"sync"
 	"syscall"
 	"time"
 
@@ -76,14 +77,16 @@ func configureWunderGraphServer() *echo.Echo {
 		plugins.RegisterOperationsHooks(e, subscriptionOperations, types.WdgHooksAndServerConfig.Hooks.Subscriptions)
 		e.Logger.Debugf(`Registered (%d) subscription operations`, subscriptionLen)
 	}
-
 	plugins.BuildDefaultInternalClient(internalQueries, internalMutations)
-	for _, registeredHook := range base.GetRegisteredHookArr() {
-		go registeredHook(e.Logger)
-	}
 
+	registerOnce := &sync.Once{}
 	e.Use(func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
+			registerOnce.Do(func() {
+				for _, registeredHook := range base.GetRegisteredHookArr() {
+					go registeredHook(e.Logger)
+				}
+			})
 			if c.Request().Method == http.MethodGet {
 				return next(c)
 			}
