@@ -110,8 +110,8 @@ func configureWunderGraphServer() *echo.Echo {
 					}
 				}
 			}
-			reqId := c.Request().Header.Get("x-request-id")
-			internalClient := base.InternalClientFactoryCall(map[string]string{"x-request-id": reqId}, body.Wg.ClientRequest, body.Wg.User)
+			reqId := c.Request().Header.Get("X-Request-Id")
+			internalClient := base.InternalClientFactoryCall(map[string]string{"X-Request-Id": reqId}, body.Wg.ClientRequest, body.Wg.User)
 			internalClient.Queries = internalQueries
 			internalClient.Mutations = internalMutations
 			brc := &base.BaseRequestContext{

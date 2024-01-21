@@ -1,34 +1,28 @@
 package generated
 
 {{#if operations}}
-import "custom-go/pkg/base"
+import "custom-go/pkg/plugins"
+import "custom-go/generated"
 {{/if}}
 
-{{#if operations}}
-type (
+var (
 {{#each operations}}
-    {{~#if (equalAny engine 1)~}}
-    {{upperFirst name}}Body = *base.OperationBody[{{upperFirst name}}Input, {{upperFirst name}}ResponseData]
-    {{~else if (equalAny engine 2)}}
-    {{~else}}
-    {{upperFirst name}}Body = *base.OperationBody[{{upperFirst name}}InternalInput, {{upperFirst name}}ResponseData]
+    {{#if (isAllTrue (invertBool isSubscription) (equalAny engine '0,1'))}}
+    {{upperFirst name}} = &plugins.Meta[generated.{{upperFirst name}}{{#equal engine 0}}Internal{{/equal}}Input, generated.{{upperFirst name}}ResponseData]{"{{path}}", {{type}} }
     {{/if~}}
+{{/each}}
+)
+
+var (
+{{#each s3Providers}}
+    UploadClient_{{name}} = &plugins.UploadClient{"{{name}}"}
 {{/each}}
 )
 
 const (
-{{#each operations}}
-    {{#if isQuery}}
-    {{upperFirst name}} base.OperationQueryPath = "{{path}}"
-    {{/if~}}
+{{#each s3Providers}}
+    {{#each uploadProfiles as |profile key|}}
+    UploadClient_{{name}}_{{key}} plugins.UploadProfile = "{{key}}"
+    {{/each}}
 {{/each}}
 )
-
-const (
-{{#each operations}}
-    {{#if isMutation}}
-    {{upperFirst name}} base.OperationMutationPath = "{{path}}"
-    {{/if~}}
-{{/each}}
-)
-{{/if}}
