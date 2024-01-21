@@ -2,13 +2,21 @@ package generated
 
 {{#if operations}}
 import "custom-go/pkg/plugins"
-import "custom-go/generated"
+import "custom-go/pkg/base"
 {{/if}}
 
 var (
 {{#each operations}}
     {{#if (isAllTrue (invertBool isSubscription) (equalAny engine '0,1'))}}
-    {{upperFirst name}} = &plugins.Meta[generated.{{upperFirst name}}{{#equal engine 0}}Internal{{/equal}}Input, generated.{{upperFirst name}}ResponseData]{"{{path}}", {{type}} }
+    {{upperFirst name}} = &plugins.Meta[{{upperFirst name}}{{#equal engine 0}}Internal{{/equal}}Input, {{upperFirst name}}ResponseData]{"{{path}}", {{type}} }
+    {{/if~}}
+{{/each}}
+)
+
+type (
+{{#each operations}}
+    {{#if (isAllTrue (invertBool isSubscription) (equalAny engine '0,1'))}}
+    {{upperFirst name}}Body = *base.OperationBody[{{upperFirst name}}{{#equal engine 0}}Internal{{/equal}}Input, {{upperFirst name}}ResponseData]
     {{/if~}}
 {{/each}}
 )
