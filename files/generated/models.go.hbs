@@ -1,12 +1,5 @@
 package generated
 
-{{#with typeFormatArray}}
-import (
-{{#each this}}
-    {{#equal this 'DateTime'}}"time"{{/equal}}
-{{/each}}
-)
-{{/with}}
 {{#each objectFieldArray}}
 {{#if description}}// {{upperFirst (joinString '_' documentPath)}}
 /*  {{description}} */{{/if}}

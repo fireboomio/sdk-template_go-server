@@ -1,7 +1,7 @@
 package plugins
 
 import (
-	"custom-go/pkg/types"
+	"custom-go/pkg/base"
 	"custom-go/pkg/utils"
 	"fmt"
 	"github.com/labstack/echo/v4"
@@ -23,28 +23,28 @@ const (
 	customResolveKey       = "customResolve"
 )
 
-func ConvertBodyFunc[I, O any](oldFunc func(*types.HookRequest, *types.OperationBody[I, O]) (*types.OperationBody[I, O], error)) types.OperationHookFunction {
-	return func(hook *types.HookRequest, body *types.OperationBody[any, any]) (res *types.OperationBody[any, any], err error) {
+func ConvertBodyFunc[I, O any](oldFunc func(*base.HookRequest, *base.OperationBody[I, O]) (*base.OperationBody[I, O], error)) base.OperationHookFunction {
+	return func(hook *base.HookRequest, body *base.OperationBody[any, any]) (res *base.OperationBody[any, any], err error) {
 		// 将传入的 OperationBody 转换为需要的类型
-		var input = utils.ConvertType[types.OperationBody[any, any], types.OperationBody[I, O]](body)
+		var input = utils.ConvertType[base.OperationBody[any, any], base.OperationBody[I, O]](body)
 		// 调用旧函数获取结果
 		oldRes, err := oldFunc(hook, input)
 		if err != nil {
 			return res, err
 		}
 
-		res = utils.ConvertType[types.OperationBody[I, O], types.OperationBody[any, any]](oldRes)
+		res = utils.ConvertType[base.OperationBody[I, O], base.OperationBody[any, any]](oldRes)
 		return res, nil
 	}
 }
 
-func RegisterOperationsHooks(e *echo.Echo, operations []string, operationHooksMap types.OperationHooks) {
+func RegisterOperationsHooks(e *echo.Echo, operations []string, operationHooksMap base.OperationHooks) {
 	for _, operationPath := range operations {
 		registerOperationHooks(e, operationPath, operationHooksMap)
 	}
 }
 
-func registerOperationHooks(e *echo.Echo, operationPath string, operationHooksMap types.OperationHooks) {
+func registerOperationHooks(e *echo.Echo, operationPath string, operationHooksMap base.OperationHooks) {
 	if operationHook, ok := operationHooksMap[operationPath]; ok {
 		pathPrefix := path.Join("/operation", operationPath)
 		if operationHook.MockResolve != nil {
@@ -85,13 +85,13 @@ func registerOperationHooks(e *echo.Echo, operationPath string, operationHooksMa
 	}
 }
 
-func requestContext(c echo.Context) (result *types.HookRequest, err error) {
+func requestContext(c echo.Context) (result *base.HookRequest, err error) {
 	body := make(map[string]interface{})
 	if err := c.Request().ParseForm(); err != nil {
 		return result, err
 	}
 
-	result = c.(*types.HookRequest)
+	result = c.(*base.HookRequest)
 	for key, value := range c.Request().Form {
 		body[key] = value[0]
 	}
@@ -104,24 +104,24 @@ func requestContext(c echo.Context) (result *types.HookRequest, err error) {
 	return result, nil
 }
 
-func mockResolve(in, out *types.OperationBody[any, any]) {
+func mockResolve(in, out *base.OperationBody[any, any]) {
 	in.Response = out.Response
 	in.SetClientRequestHeaders = out.SetClientRequestHeaders
 }
-func preResolve(in, out *types.OperationBody[any, any]) {
+func preResolve(in, out *base.OperationBody[any, any]) {
 	in.SetClientRequestHeaders = out.SetClientRequestHeaders
 }
 
-func postResolve(in, out *types.OperationBody[any, any]) {
+func postResolve(in, out *base.OperationBody[any, any]) {
 	in.SetClientRequestHeaders = out.SetClientRequestHeaders
 }
 
-func mutatingPreResolve(in, out *types.OperationBody[any, any]) {
+func mutatingPreResolve(in, out *base.OperationBody[any, any]) {
 	in.Input = out.Input
 	in.SetClientRequestHeaders = out.SetClientRequestHeaders
 }
 
-func mutatingPostResolve(in, out *types.OperationBody[any, any]) {
+func mutatingPostResolve(in, out *base.OperationBody[any, any]) {
 	in.Response = out.Response
 	in.SetClientRequestHeaders = out.SetClientRequestHeaders
 	if in.Response != nil && in.Response.DataAny != nil {
@@ -130,17 +130,17 @@ func mutatingPostResolve(in, out *types.OperationBody[any, any]) {
 	}
 }
 
-func customResolve(in, out *types.OperationBody[any, any]) {
+func customResolve(in, out *base.OperationBody[any, any]) {
 	in.Response = out.Response
 	in.SetClientRequestHeaders = out.SetClientRequestHeaders
 }
 
-func buildOperationHook(operationName, hookName string, hookFunction types.OperationHookFunction, action func(in, out *types.OperationBody[any, any])) echo.HandlerFunc {
+func buildOperationHook(operationName, hookName string, hookFunction base.OperationHookFunction, action func(in, out *base.OperationBody[any, any])) echo.HandlerFunc {
 	return func(c echo.Context) (err error) {
 		c.Response().Header().Set(echo.HeaderContentType, echo.MIMEApplicationJSONCharsetUTF8)
 		c.Response().WriteHeader(http.StatusOK)
 
-		var in types.OperationBody[any, any]
+		var in base.OperationBody[any, any]
 		err = c.Bind(&in)
 		if err != nil {
 			return

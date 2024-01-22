@@ -1,8 +1,10 @@
 package plugins
 
 import (
-	"custom-go/pkg/types"
+	"custom-go/pkg/base"
+	"custom-go/pkg/consts"
 	"custom-go/pkg/utils"
+	"custom-go/pkg/wgpb"
 	"encoding/json"
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/invopop/jsonschema"
@@ -17,43 +19,40 @@ import (
 const (
 	schemaRefPrefix       = "#/$defs/"
 	swaggerRefPrefix      = "#/definitions/"
-	definitionRefProperty = "definitions"
-	jsonExtension         = ".json"
+	DefinitionRefProperty = "definitions"
 )
 
-func RegisterFunction[I, O any](hookFunc func(*types.HookRequest, *types.OperationBody[I, O]) (*types.OperationBody[I, O], error), operationType ...types.OperationType) {
-	callerName := utils.GetCallerName(string(types.HookParent_function))
-	apiPrefixPath := "/" + string(types.HookParent_function)
+func RegisterFunction[I, O any](hookFunc func(*base.HookRequest, *base.OperationBody[I, O]) (*base.OperationBody[I, O], error), operationType ...wgpb.OperationType) {
+	callerName := utils.GetCallerName(consts.FUNCTIONS)
+	apiPrefixPath := "/" + consts.FUNCTIONS
 	apiPath := path.Join(apiPrefixPath, callerName)
 
-	types.AddEchoRouterFunc(func(e *echo.Echo) {
+	base.AddEchoRouterFunc(func(e *echo.Echo) {
 		e.Logger.Debugf(`Registered hookFunction [%s]`, apiPath)
-		e.POST(apiPath, buildOperationHook(callerName, string(types.HookParent_function), ConvertBodyFunc[I, O](hookFunc), func(in, out *types.OperationBody[any, any]) {
+		e.POST(apiPath, buildOperationHook(callerName, consts.FUNCTIONS, ConvertBodyFunc[I, O](hookFunc), func(in, out *base.OperationBody[any, any]) {
 			in.Response = out.Response
 		}))
 	})
 
-	types.AddHealthFunc(func(e *echo.Echo, report *types.HealthReportLock) {
-		operationJsonPath := filepath.Join(string(types.HookParent_function), callerName) + jsonExtension
-		operation := &types.Operation{}
+	base.AddHealthFunc(func(e *echo.Echo, s string, report *base.HealthReport) {
+		operationJsonPath := filepath.Join(consts.FUNCTIONS, callerName) + consts.JSON_EXT
+		operation := &wgpb.Operation{}
 
 		// 读文件，保留原有配置，只需更新schema
 		if !utils.NotExistFile(operationJsonPath) {
-			_ = utils.ReadStructAndCacheFile(operationJsonPath, operation)
+			utils.ReadStructAndCacheFile(operationJsonPath, operation)
 		} else {
 			operation.Name = callerName
 			operation.Path = apiPath
-			operation.OperationType = types.OperationType_MUTATION
+			operation.OperationType = wgpb.OperationType_MUTATION
 		}
 
 		if operationType != nil && len(operationType) > 0 {
 			operation.OperationType = operationType[0]
 		}
 
-		var (
-			i I
-			o O
-		)
+		var i I
+		var o O
 		// 解析入参和出参
 		inputSchema := jsonschema.Reflect(i)
 		outputSchema := jsonschema.Reflect(o)
@@ -96,7 +95,7 @@ func BuildSchema(schema *jsonschema.Schema) string {
 	if len(defs) == 0 {
 		return res
 	}
-	res, _ = sjson.Set(res, definitionRefProperty, defs)
+	res, _ = sjson.Set(res, DefinitionRefProperty, defs)
 	return res
 }
 

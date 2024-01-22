@@ -2,9 +2,9 @@ package plugins
 
 import (
 	"bytes"
-	"context"
+	"custom-go/pkg/base"
+	"custom-go/pkg/consts"
 	"custom-go/pkg/embeds"
-	"custom-go/pkg/types"
 	"custom-go/pkg/utils"
 	"encoding/json"
 	"errors"
@@ -54,21 +54,6 @@ const (
 	graphqlResultDataPath   = "data.__schema"
 )
 
-type GraphqlRequestContext struct {
-	context.Context
-	User           *types.User
-	InternalClient *types.InternalClient
-	Logger         echo.Logger
-	Result         *GraphqlResultChan
-	Request        *http.Request
-}
-
-type GraphqlResultChan struct {
-	Data  chan []byte
-	Error chan []byte
-	Done  chan []byte
-}
-
 type GraphQLServerConfig struct {
 	ServerName            string
 	Schema                graphql.Schema
@@ -105,7 +90,7 @@ var htmlBytesMap = make(map[string][]byte, 0)
 
 func RegisterGraphql(schema *graphql.Schema) {
 	// eg. customize/test
-	callerName := GetCallerName(string(types.HookParent_customize))
+	callerName := GetCallerName(consts.CUSTOMIZE)
 	routeUrl := fmt.Sprintf(`/gqls/%s/graphql`, callerName)
 	var hasSubscriptionFieldResolveFn bool
 	if subscriptionType := schema.SubscriptionType(); subscriptionType != nil {
@@ -116,7 +101,7 @@ func RegisterGraphql(schema *graphql.Schema) {
 			}
 		}
 	}
-	types.AddEchoRouterFunc(func(e *echo.Echo) {
+	base.AddEchoRouterFunc(func(e *echo.Echo) {
 		e.Logger.Debugf(`Registered gqlServer (%s)`, routeUrl)
 		e.GET(routeUrl, echo.WrapHandler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			var htmlBytes []byte
@@ -142,8 +127,8 @@ func RegisterGraphql(schema *graphql.Schema) {
 				return buildEchoGraphqlError(c, err)
 			}
 
-			brc := c.(*types.BaseRequestContext)
-			grc := &GraphqlRequestContext{
+			brc := c.(*base.BaseRequestContext)
+			grc := &base.GraphqlRequestContext{
 				Request:        c.Request(),
 				Context:        c.Request().Context(),
 				User:           brc.User,
@@ -173,15 +158,15 @@ func RegisterGraphql(schema *graphql.Schema) {
 	})
 
 	// 注册 healthFunc
-	types.AddHealthFunc(func(e *echo.Echo, report *types.HealthReportLock) {
+	base.AddHealthFunc(func(e *echo.Echo, address string, report *base.HealthReport) {
 		// 内省自身并输出到文件
-		introspectBytes, err := embeds.EmbedIntrospect.ReadFile(embeds.INTROSPECT_FILE)
+		introspectBytes, err := embeds.EmbedIntrospect.ReadFile(consts.INTROSPECT_FILE)
 		if err != nil {
 			e.Logger.Errorf("get embed introspect.json failed, err: %v", err.Error())
 			return
 		}
 		headers := map[string]string{echo.HeaderContentType: echo.MIMEApplicationJSON}
-		respBody, err := utils.HttpPost(fmt.Sprintf("http://%s%s", types.ServerListenAddress, routeUrl), introspectBytes, headers, 5)
+		respBody, err := utils.HttpPost(consts.HTTP_PREFIX+address+routeUrl, introspectBytes, headers, 5)
 		if err != nil {
 			e.Logger.Errorf("post req failed, uri: %s, err: %v", routeUrl, err.Error())
 			return
@@ -194,7 +179,7 @@ func RegisterGraphql(schema *graphql.Schema) {
 		res := gjson.GetBytes(respBody, graphqlResultDataPath).String()
 
 		// 写入文件--eg. custom-go/customize/test.go  --> custom-go/customize/test.json
-		err = os.WriteFile(filepath.Join(string(types.HookParent_customize), callerName)+jsonExtension, []byte(res), 0644)
+		err = os.WriteFile(filepath.Join(consts.CUSTOMIZE, callerName)+consts.JSON_EXT, []byte(res), 0644)
 		if err != nil {
 			e.Logger.Errorf("write file failed, err: %v", err.Error())
 			return
@@ -206,7 +191,7 @@ func RegisterGraphql(schema *graphql.Schema) {
 	})
 }
 
-func handleSSEFromChan(c *types.BaseRequestContext, resultChan chan *graphql.Result) error {
+func handleSSEFromChan(c *base.BaseRequestContext, resultChan chan *graphql.Result) error {
 	flusher, ok := c.Response().Writer.(http.Flusher)
 	if !ok {
 		return fmt.Errorf("streaming unsupported")
@@ -246,7 +231,7 @@ func handleSSEFromChan(c *types.BaseRequestContext, resultChan chan *graphql.Res
 	}
 }
 
-func handleSSE(c *types.BaseRequestContext, sseChan *GraphqlResultChan) error {
+func handleSSE(c *base.BaseRequestContext, sseChan *base.ResultChan) error {
 	flusher, ok := c.Response().Writer.(http.Flusher)
 	if !ok {
 		return fmt.Errorf("streaming unsupported")
@@ -304,11 +289,11 @@ func buildEchoGraphqlError(c echo.Context, err error) error {
 	})
 }
 
-func GetGraphqlContext(params graphql.ResolveParams) *GraphqlRequestContext {
-	return params.Context.(*GraphqlRequestContext)
+func GetGraphqlContext(params graphql.ResolveParams) *base.GraphqlRequestContext {
+	return params.Context.(*base.GraphqlRequestContext)
 }
 
-func ResolveArgs[T any](params graphql.ResolveParams) (grc *GraphqlRequestContext, args *T, err error) {
+func ResolveArgs[T any](params graphql.ResolveParams) (grc *base.GraphqlRequestContext, args *T, err error) {
 	grc = GetGraphqlContext(params)
 	err = ResolveParamsToStruct(params, &args)
 	return
@@ -323,8 +308,8 @@ func ResolveParamsToStruct(params graphql.ResolveParams, input any) error {
 	return json.Unmarshal(argsBytes, &input)
 }
 
-func HandleSSEReader(eventStream io.ReadCloser, grc *GraphqlRequestContext, handle func([]byte, bool) ([]byte, bool, error)) {
-	grc.Result = &GraphqlResultChan{
+func HandleSSEReader(eventStream io.ReadCloser, grc *base.GraphqlRequestContext, handle func([]byte, bool) ([]byte, bool, error)) {
+	grc.Result = &base.ResultChan{
 		Data:  make(chan []byte),
 		Error: make(chan []byte),
 		Done:  make(chan []byte),
@@ -446,7 +431,7 @@ func HandleSSEReader(eventStream io.ReadCloser, grc *GraphqlRequestContext, hand
 	}()
 }
 
-func HandleSSEReaderForGraphql(eventStream io.ReadCloser, handle func([]byte) ([]byte, bool)) chan graphql.Result {
+func HandleSSEReader2(eventStream io.ReadCloser, handle func([]byte) ([]byte, bool)) chan graphql.Result {
 	sseChan := make(chan graphql.Result)
 
 	go func() {

@@ -2,7 +2,6 @@ package plugins
 
 import (
 	"bytes"
-	"custom-go/pkg/types"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -28,18 +27,18 @@ type (
 		Key string `json:"key"`
 	}
 	UploadClient struct {
-		Name       string
-		Endpoint   string
-		BucketName string
-		UseSSL     bool
+		Name string
 	}
 )
 
-func NewUploadClient(Name string, Endpoint string, BucketName string, UseSSL bool) *UploadClient {
-	return &UploadClient{Name: Name, Endpoint: Endpoint, BucketName: BucketName, UseSSL: UseSSL}
-}
+var (
+	baseNodeUrl      string
+	uploadHttpClient = http.Client{Timeout: 30 * time.Second}
+)
 
-var uploadHttpClient = http.Client{Timeout: 30 * time.Second}
+func SetBaseNodeUrl(url string) {
+	baseNodeUrl = url
+}
 
 func (u *UploadClient) Upload(parameter *UploadParameter) (uploadResp UploadResponse, err error) {
 	body := new(bytes.Buffer)
@@ -61,7 +60,7 @@ func (u *UploadClient) Upload(parameter *UploadParameter) (uploadResp UploadResp
 		return
 	}
 
-	uploadPath := types.PrivateNodeUrl + fmt.Sprintf("/s3/%s/upload", u.Name)
+	uploadPath := baseNodeUrl + fmt.Sprintf("/s3/%s/upload", u.Name)
 	if len(parameter.Directory) > 0 {
 		uploadPath += "?directory=" + parameter.Directory
 	}
@@ -97,12 +96,4 @@ func (u *UploadClient) Upload(parameter *UploadParameter) (uploadResp UploadResp
 
 	err = json.Unmarshal(content, &uploadResp)
 	return
-}
-
-func (u *UploadClient) GetOssUrl(key string) string {
-	var ssl string
-	if u.UseSSL {
-		ssl = "s"
-	}
-	return fmt.Sprintf("http%s://%s.%s/%s", ssl, u.BucketName, u.Endpoint, key)
 }

@@ -1,9 +1,11 @@
 package server
 
 import (
+	"custom-go/pkg/base"
 	"custom-go/pkg/plugins"
 	"custom-go/pkg/types"
 	"custom-go/pkg/utils"
+	"custom-go/pkg/wgpb"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	"github.com/labstack/gommon/log"
@@ -27,6 +29,11 @@ func Execute() {
 	}
 }
 
+var (
+	address      string
+	healthReport *base.HealthReport
+)
+
 func configureWunderGraphServer() *echo.Echo {
 	// 初始化 Echo 实例
 	e := echo.New()
@@ -47,25 +54,25 @@ func configureWunderGraphServer() *echo.Echo {
 	}
 	e.Use(middleware.CORSWithConfig(corsCfg))
 
-	plugins.RegisterGlobalHooks(e, plugins.WdgHooksAndServerConfig.Hooks.Global)
-	plugins.RegisterAuthHooks(e, plugins.WdgHooksAndServerConfig.Hooks.Authentication)
-	plugins.RegisterUploadsHooks(e, plugins.WdgHooksAndServerConfig.Hooks.Uploads)
+	plugins.RegisterGlobalHooks(e, types.WdgHooksAndServerConfig.Hooks.Global)
+	plugins.RegisterAuthHooks(e, types.WdgHooksAndServerConfig.Hooks.Authentication)
+	plugins.RegisterUploadsHooks(e, types.WdgHooksAndServerConfig.Hooks.Uploads)
 
-	internalQueries := plugins.BuildInternalRequest(e.Logger, types.OperationType_QUERY)
+	nodeUrl := utils.GetConfigurationVal(types.WdgGraphConfig.Api.NodeOptions.NodeUrl)
+	plugins.SetBaseNodeUrl(nodeUrl)
+	internalQueries := plugins.BuildInternalRequest(e.Logger, nodeUrl, wgpb.OperationType_QUERY)
 	if queryLen := len(internalQueries); queryLen > 0 {
-		plugins.RegisterOperationsHooks(e, maps.Keys(internalQueries), plugins.WdgHooksAndServerConfig.Hooks.Queries)
+		plugins.RegisterOperationsHooks(e, maps.Keys(internalQueries), types.WdgHooksAndServerConfig.Hooks.Queries)
 		e.Logger.Debugf(`Registered (%d) query operations`, queryLen)
 	}
-
-	internalMutations := plugins.BuildInternalRequest(e.Logger, types.OperationType_MUTATION)
+	internalMutations := plugins.BuildInternalRequest(e.Logger, nodeUrl, wgpb.OperationType_MUTATION)
 	if mutationLen := len(internalMutations); mutationLen > 0 {
-		plugins.RegisterOperationsHooks(e, maps.Keys(internalMutations), plugins.WdgHooksAndServerConfig.Hooks.Mutations)
+		plugins.RegisterOperationsHooks(e, maps.Keys(internalMutations), types.WdgHooksAndServerConfig.Hooks.Mutations)
 		e.Logger.Debugf(`Registered (%d) mutation operations`, mutationLen)
 	}
-
 	subscriptionOperations := plugins.FetchSubscriptions()
 	if subscriptionLen := len(subscriptionOperations); subscriptionLen > 0 {
-		plugins.RegisterOperationsHooks(e, subscriptionOperations, plugins.WdgHooksAndServerConfig.Hooks.Subscriptions)
+		plugins.RegisterOperationsHooks(e, subscriptionOperations, types.WdgHooksAndServerConfig.Hooks.Subscriptions)
 		e.Logger.Debugf(`Registered (%d) subscription operations`, subscriptionLen)
 	}
 	plugins.BuildDefaultInternalClient(internalQueries, internalMutations)
@@ -74,7 +81,7 @@ func configureWunderGraphServer() *echo.Echo {
 	e.Use(func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
 			registerOnce.Do(func() {
-				for _, registeredHook := range types.GetRegisteredHookArr() {
+				for _, registeredHook := range base.GetRegisteredHookArr() {
 					go registeredHook(e.Logger)
 				}
 			})
@@ -82,17 +89,14 @@ func configureWunderGraphServer() *echo.Echo {
 				return next(c)
 			}
 
-			var body types.BaseRequestBody
+			var body base.BaseRequestBody
 			err := utils.CopyAndBindRequestBody(c.Request(), &body)
 			if err != nil {
 				return err
 			}
 
-			if body.Wg == nil {
-				body.Wg = &types.BaseRequestBodyWg{}
-			}
 			if body.Wg.ClientRequest == nil {
-				body.Wg.ClientRequest = &types.WunderGraphRequest{
+				body.Wg.ClientRequest = &base.ClientRequest{
 					Method:     c.Request().Method,
 					RequestURI: c.Request().RequestURI,
 					Headers:    map[string]string{},
@@ -104,11 +108,11 @@ func configureWunderGraphServer() *echo.Echo {
 					}
 				}
 			}
-			reqId := c.Request().Header.Get("X-Request-Id")
-			internalClient := types.InternalClientFactoryCall(map[string]string{"X-Request-Id": reqId}, body.Wg.ClientRequest, body.Wg.User)
+			reqId := c.Request().Header.Get("x-request-id")
+			internalClient := base.InternalClientFactoryCall(map[string]string{"x-request-id": reqId}, body.Wg.ClientRequest, body.Wg.User)
 			internalClient.Queries = internalQueries
 			internalClient.Mutations = internalMutations
-			brc := &types.BaseRequestContext{
+			brc := &base.BaseRequestContext{
 				Context:        c,
 				User:           body.Wg.User,
 				InternalClient: internalClient,
@@ -117,16 +121,14 @@ func configureWunderGraphServer() *echo.Echo {
 		}
 	})
 
-	for _, routerFunc := range types.GetEchoRouterFuncArr() {
+	for _, routerFunc := range base.GetEchoRouterFuncArr() {
 		routerFunc(e)
 	}
 
-	var healthReport *types.HealthReportLock
 	e.Server.BaseContext = func(_ net.Listener) context.Context {
-		healthReport = &types.HealthReportLock{}
-		healthReport.Time = time.Now()
-		for _, healthFunc := range types.GetHealthFuncArr() {
-			go healthFunc(e, healthReport)
+		healthReport = &base.HealthReport{Time: time.Now()}
+		for _, healthFunc := range base.GetHealthFuncArr() {
+			go healthFunc(e, address, healthReport)
 		}
 		return context.Background()
 	}
@@ -147,7 +149,9 @@ func startServer() error {
 
 	// 启动服务器
 	go func() {
-		if err := wdgServer.Start(types.ServerListenAddress); err != nil {
+		serverListen := types.WdgGraphConfig.Api.ServerOptions.Listen
+		address = utils.GetConfigurationVal(serverListen.Host) + ":" + utils.GetConfigurationVal(serverListen.Port)
+		if err := wdgServer.Start(address); err != nil {
 			panic(err)
 		}
 	}()
