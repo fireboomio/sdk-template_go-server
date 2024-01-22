@@ -1,14 +1,14 @@
 package generated
 
-{{#if operations}}
-import "custom-go/pkg/plugins"
-import "custom-go/pkg/base"
-{{/if}}
+import (
+    "custom-go/pkg/plugins"
+    "custom-go/pkg/types"
+)
 
 var (
 {{#each operations}}
     {{#if (isAllTrue (invertBool isSubscription) (equalAny engine '0,1'))}}
-    {{upperFirst name}} = &plugins.Meta[{{upperFirst name}}{{#equal engine 0}}Internal{{/equal}}Input, {{upperFirst name}}ResponseData]{"{{path}}", {{type}} }
+    {{upperFirst name}} = plugins.NewOperationMeta[{{upperFirst name}}{{#equal engine 0}}Internal{{/equal}}Input, {{upperFirst name}}ResponseData]("{{path}}", {{type}})
     {{/if~}}
 {{/each}}
 )
@@ -16,14 +16,14 @@ var (
 type (
 {{#each operations}}
     {{#if (isAllTrue (invertBool isSubscription) (equalAny engine '0,1'))}}
-    {{upperFirst name}}Body = *base.OperationBody[{{upperFirst name}}{{#equal engine 0}}Internal{{/equal}}Input, {{upperFirst name}}ResponseData]
+    {{upperFirst name}}Body = *types.OperationBody[{{upperFirst name}}{{#equal engine 0}}Internal{{/equal}}Input, {{upperFirst name}}ResponseData]
     {{/if~}}
 {{/each}}
 )
 
 var (
 {{#each s3Providers}}
-    UploadClient_{{name}} = &plugins.UploadClient{"{{name}}"}
+    UploadClient_{{name}} = plugins.NewUploadClient("{{name}}", "{{getVariableString endpoint}}", "{{getVariableString bucketName}}", {{useSSL}})
 {{/each}}
 )
 

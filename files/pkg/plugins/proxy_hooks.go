@@ -1,10 +1,8 @@
 package plugins
 
 import (
-	"custom-go/pkg/base"
-	"custom-go/pkg/consts"
+	"custom-go/pkg/types"
 	"custom-go/pkg/utils"
-	"custom-go/pkg/wgpb"
 	"encoding/json"
 	"github.com/labstack/echo/v4"
 	"os"
@@ -12,29 +10,29 @@ import (
 	"path/filepath"
 )
 
-type httpProxyHookFunction func(*base.HttpTransportHookRequest, *HttpTransportBody) (*base.ClientResponse, error)
+type httpProxyHookFunction func(*types.HttpTransportHookRequest, *HttpTransportBody) (*types.WunderGraphResponse, error)
 
-func RegisterProxyHook(hookFunc httpProxyHookFunction, operationType ...wgpb.OperationType) {
-	callerName := utils.GetCallerName(consts.PROXY)
-	apiPrefixPath := "/" + consts.PROXY
+func RegisterProxyHook(hookFunc httpProxyHookFunction, operationType ...types.OperationType) {
+	callerName := utils.GetCallerName(string(types.HookParent_proxy))
+	apiPrefixPath := "/" + string(types.HookParent_proxy)
 	apiPath := path.Join(apiPrefixPath, callerName)
 
-	base.AddEchoRouterFunc(func(e *echo.Echo) {
+	types.AddEchoRouterFunc(func(e *echo.Echo) {
 		e.Logger.Debugf(`Registered hookFunction [%s]`, apiPath)
 		e.POST(apiPath, BuildHookFunc(hookFunc))
 	})
 
-	base.AddHealthFunc(func(e *echo.Echo, s string, report *base.HealthReport) {
-		operation := &wgpb.Operation{}
-		operationJsonPath := filepath.Join(consts.PROXY, callerName) + consts.JSON_EXT
+	types.AddHealthFunc(func(e *echo.Echo, report *types.HealthReportLock) {
+		operation := &types.Operation{}
+		operationJsonPath := filepath.Join(string(types.HookParent_proxy), callerName) + jsonExtension
 
 		// 读文件，保留原有配置，只需更新schema
 		if !utils.NotExistFile(operationJsonPath) {
-			utils.ReadStructAndCacheFile(operationJsonPath, operation)
+			_ = utils.ReadStructAndCacheFile(operationJsonPath, operation)
 		} else {
 			operation.Name = callerName
 			operation.Path = apiPath
-			operation.OperationType = wgpb.OperationType_MUTATION
+			operation.OperationType = types.OperationType_MUTATION
 		}
 
 		if operationType != nil && len(operationType) > 0 {

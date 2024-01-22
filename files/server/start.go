@@ -1,14 +1,13 @@
 package server
 
 import (
-	"custom-go/pkg/base"
 	"custom-go/pkg/plugins"
 	"custom-go/pkg/types"
 	"custom-go/pkg/utils"
-	"custom-go/pkg/wgpb"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	"github.com/labstack/gommon/log"
+	"golang.org/x/exp/maps"
 	"net"
 	"net/http"
 	"os"
@@ -27,11 +26,6 @@ func Execute() {
 		os.Exit(1)
 	}
 }
-
-var (
-	address      string
-	healthReport *base.HealthReport
-)
 
 func configureWunderGraphServer() *echo.Echo {
 	// 初始化 Echo 实例
@@ -53,28 +47,25 @@ func configureWunderGraphServer() *echo.Echo {
 	}
 	e.Use(middleware.CORSWithConfig(corsCfg))
 
-	plugins.RegisterGlobalHooks(e, types.WdgHooksAndServerConfig.Hooks.Global)
-	plugins.RegisterAuthHooks(e, types.WdgHooksAndServerConfig.Hooks.Authentication)
-	plugins.RegisterUploadsHooks(e, types.WdgHooksAndServerConfig.Hooks.Uploads)
+	plugins.RegisterGlobalHooks(e, plugins.WdgHooksAndServerConfig.Hooks.Global)
+	plugins.RegisterAuthHooks(e, plugins.WdgHooksAndServerConfig.Hooks.Authentication)
+	plugins.RegisterUploadsHooks(e, plugins.WdgHooksAndServerConfig.Hooks.Uploads)
 
-	var internalQueries, internalMutations base.OperationDefinitions
-	nodeUrl := utils.GetConfigurationVal(types.WdgGraphConfig.Api.NodeOptions.NodeUrl)
-	plugins.SetBaseNodeUrl(nodeUrl)
-	queryOperations := filterOperationsHooks(types.WdgGraphConfig.Api.Operations, wgpb.OperationType_QUERY)
-	if queryLen := len(queryOperations); queryLen > 0 {
-		internalQueries = plugins.BuildInternalRequest(e.Logger, nodeUrl, queryOperations)
-		plugins.RegisterOperationsHooks(e, queryOperations, types.WdgHooksAndServerConfig.Hooks.Queries)
+	internalQueries := plugins.BuildInternalRequest(e.Logger, types.OperationType_QUERY)
+	if queryLen := len(internalQueries); queryLen > 0 {
+		plugins.RegisterOperationsHooks(e, maps.Keys(internalQueries), plugins.WdgHooksAndServerConfig.Hooks.Queries)
 		e.Logger.Debugf(`Registered (%d) query operations`, queryLen)
 	}
-	mutationOperations := filterOperationsHooks(types.WdgGraphConfig.Api.Operations, wgpb.OperationType_MUTATION)
-	if mutationLen := len(mutationOperations); mutationLen > 0 {
-		internalMutations = plugins.BuildInternalRequest(e.Logger, nodeUrl, mutationOperations)
-		plugins.RegisterOperationsHooks(e, mutationOperations, types.WdgHooksAndServerConfig.Hooks.Mutations)
+
+	internalMutations := plugins.BuildInternalRequest(e.Logger, types.OperationType_MUTATION)
+	if mutationLen := len(internalMutations); mutationLen > 0 {
+		plugins.RegisterOperationsHooks(e, maps.Keys(internalMutations), plugins.WdgHooksAndServerConfig.Hooks.Mutations)
 		e.Logger.Debugf(`Registered (%d) mutation operations`, mutationLen)
 	}
-	subscriptionOperations := filterOperationsHooks(types.WdgGraphConfig.Api.Operations, wgpb.OperationType_SUBSCRIPTION)
+
+	subscriptionOperations := plugins.FetchSubscriptions()
 	if subscriptionLen := len(subscriptionOperations); subscriptionLen > 0 {
-		plugins.RegisterOperationsHooks(e, subscriptionOperations, types.WdgHooksAndServerConfig.Hooks.Subscriptions)
+		plugins.RegisterOperationsHooks(e, subscriptionOperations, plugins.WdgHooksAndServerConfig.Hooks.Subscriptions)
 		e.Logger.Debugf(`Registered (%d) subscription operations`, subscriptionLen)
 	}
 	plugins.BuildDefaultInternalClient(internalQueries, internalMutations)
@@ -83,7 +74,7 @@ func configureWunderGraphServer() *echo.Echo {
 	e.Use(func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
 			registerOnce.Do(func() {
-				for _, registeredHook := range base.GetRegisteredHookArr() {
+				for _, registeredHook := range types.GetRegisteredHookArr() {
 					go registeredHook(e.Logger)
 				}
 			})
@@ -91,14 +82,17 @@ func configureWunderGraphServer() *echo.Echo {
 				return next(c)
 			}
 
-			var body base.BaseRequestBody
+			var body types.BaseRequestBody
 			err := utils.CopyAndBindRequestBody(c.Request(), &body)
 			if err != nil {
 				return err
 			}
 
+			if body.Wg == nil {
+				body.Wg = &types.BaseRequestBodyWg{}
+			}
 			if body.Wg.ClientRequest == nil {
-				body.Wg.ClientRequest = &base.ClientRequest{
+				body.Wg.ClientRequest = &types.WunderGraphRequest{
 					Method:     c.Request().Method,
 					RequestURI: c.Request().RequestURI,
 					Headers:    map[string]string{},
@@ -111,10 +105,10 @@ func configureWunderGraphServer() *echo.Echo {
 				}
 			}
 			reqId := c.Request().Header.Get("X-Request-Id")
-			internalClient := base.InternalClientFactoryCall(map[string]string{"X-Request-Id": reqId}, body.Wg.ClientRequest, body.Wg.User)
+			internalClient := types.InternalClientFactoryCall(map[string]string{"X-Request-Id": reqId}, body.Wg.ClientRequest, body.Wg.User)
 			internalClient.Queries = internalQueries
 			internalClient.Mutations = internalMutations
-			brc := &base.BaseRequestContext{
+			brc := &types.BaseRequestContext{
 				Context:        c,
 				User:           body.Wg.User,
 				InternalClient: internalClient,
@@ -123,14 +117,16 @@ func configureWunderGraphServer() *echo.Echo {
 		}
 	})
 
-	for _, routerFunc := range base.GetEchoRouterFuncArr() {
+	for _, routerFunc := range types.GetEchoRouterFuncArr() {
 		routerFunc(e)
 	}
 
+	var healthReport *types.HealthReportLock
 	e.Server.BaseContext = func(_ net.Listener) context.Context {
-		healthReport = &base.HealthReport{Time: time.Now()}
-		for _, healthFunc := range base.GetHealthFuncArr() {
-			go healthFunc(e, address, healthReport)
+		healthReport = &types.HealthReportLock{}
+		healthReport.Time = time.Now()
+		for _, healthFunc := range types.GetHealthFuncArr() {
+			go healthFunc(e, healthReport)
 		}
 		return context.Background()
 	}
@@ -151,9 +147,7 @@ func startServer() error {
 
 	// 启动服务器
 	go func() {
-		serverListen := types.WdgGraphConfig.Api.ServerOptions.Listen
-		address = utils.GetConfigurationVal(serverListen.Host) + ":" + utils.GetConfigurationVal(serverListen.Port)
-		if err := wdgServer.Start(address); err != nil {
+		if err := wdgServer.Start(types.ServerListenAddress); err != nil {
 			panic(err)
 		}
 	}()
@@ -171,13 +165,4 @@ func startServer() error {
 	}
 
 	return nil
-}
-
-func filterOperationsHooks(operations []*types.OperationStruct, operationType wgpb.OperationType) (result []string) {
-	for _, operation := range operations {
-		if operation.OperationType == operationType && operation.Path != "" {
-			result = append(result, operation.Path)
-		}
-	}
-	return
 }

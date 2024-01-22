@@ -2,7 +2,7 @@ package plugins
 
 import (
 	"bytes"
-	"custom-go/pkg/base"
+	"custom-go/pkg/types"
 	"custom-go/pkg/utils"
 	"encoding/json"
 	"errors"
@@ -12,12 +12,12 @@ import (
 	"net/http"
 )
 
-var DefaultInternalClient *base.InternalClient
+var DefaultInternalClient *types.InternalClient
 
-func BuildDefaultInternalClient(queries base.OperationDefinitions, mutations base.OperationDefinitions) {
-	DefaultInternalClient = &base.InternalClient{
-		Context: &base.InternalClientRequestContext{
-			ClientRequest: &base.ClientRequest{
+func BuildDefaultInternalClient(queries types.OperationDefinitions, mutations types.OperationDefinitions) {
+	DefaultInternalClient = &types.InternalClient{
+		Context: &types.InternalClientRequestContext{
+			ClientRequest: &types.WunderGraphRequest{
 				Headers: map[string]string{},
 			},
 		},
@@ -27,23 +27,24 @@ func BuildDefaultInternalClient(queries base.OperationDefinitions, mutations bas
 	return
 }
 
-func BuildInternalRequest(logger echo.Logger, baseNodeUrl string, operationName []string) base.OperationDefinitions {
-	result := make(base.OperationDefinitions, len(operationName))
-	for _, name := range operationName {
-		url := fmt.Sprintf("%s/internal/operations/%s", baseNodeUrl, name)
+func BuildInternalRequest(logger echo.Logger, operationType types.OperationType) types.OperationDefinitions {
+	internalOperations := operations[operationType]
+	result := make(types.OperationDefinitions, len(internalOperations))
+	for _, name := range internalOperations {
+		url := fmt.Sprintf("%s/internal/operations/%s", types.PrivateNodeUrl, name)
 		logger.Debugf(`Built internalRequest (%s)`, url)
-		result[base.OperationPath(name)] = func(ctx *base.InternalClientRequestContext, options base.OperationArgsWithInput[any]) (any, error) {
+		result[name] = func(ctx *types.InternalClientRequestContext, options types.OperationArgsWithInput[any]) (any, error) {
 			return internalRequest(url, ctx, options)
 		}
 	}
 	return result
 }
 
-func internalRequest(url string, clientCtx *base.InternalClientRequestContext, options base.OperationArgsWithInput[any]) (any, error) {
+func internalRequest(url string, clientCtx *types.InternalClientRequestContext, options types.OperationArgsWithInput[any]) (any, error) {
 	jsonData, err := json.Marshal(map[string]interface{}{
 		"input": options.Input,
 		"__wg": map[string]interface{}{
-			"clientRequest": &base.ClientRequest{
+			"clientRequest": &types.WunderGraphRequest{
 				RequestURI: url,
 				Method:     "POST",
 				Headers:    clientCtx.ClientRequest.Headers,
@@ -78,7 +79,7 @@ func internalRequest(url string, clientCtx *base.InternalClientRequestContext, o
 		return nil, errors.New(string(bodyBytes))
 	}
 
-	var res base.OperationBodyResponse[any]
+	var res types.OperationBodyResponse[any]
 	err = json.NewDecoder(resp.Body).Decode(&res)
 	if err != nil {
 		return nil, err
@@ -91,22 +92,14 @@ func internalRequest(url string, clientCtx *base.InternalClientRequestContext, o
 	return res.Data, nil
 }
 
-func ExecuteInternalRequestMutations[I, OD any](internalClient *base.InternalClient, path base.OperationMutationPath, input I) (result OD, err error) {
-	return executeInternalRequest[I, OD](internalClient.Context, internalClient.Mutations, path, input)
-}
-
-func ExecuteInternalRequestQueries[I, OD any](internalClient *base.InternalClient, path base.OperationQueryPath, input I) (result OD, err error) {
-	return executeInternalRequest[I, OD](internalClient.Context, internalClient.Queries, path, input)
-}
-
-func executeInternalRequest[I, OD any](context *base.InternalClientRequestContext, operationDefinitions base.OperationDefinitions, path base.OperationPath, input I) (result OD, err error) {
+func executeInternalRequest[I, OD any](context *types.InternalClientRequestContext, operationDefinitions types.OperationDefinitions, path string, input I) (result OD, err error) {
 	execFunction := operationDefinitions[path]
 	if nil == execFunction {
 		return result, fmt.Errorf("not find internalRequest with (%s)", path)
 	}
 
-	args := base.OperationArgsWithInput[I]{Input: input}
-	options := utils.ConvertType[base.OperationArgsWithInput[I], base.OperationArgsWithInput[any]](&args)
+	args := types.OperationArgsWithInput[I]{Input: input}
+	options := utils.ConvertType[types.OperationArgsWithInput[I], types.OperationArgsWithInput[any]](&args)
 	execRes, err := execFunction(context, *options)
 	if err != nil || execRes == nil {
 		return result, err
@@ -115,12 +108,23 @@ func executeInternalRequest[I, OD any](context *base.InternalClientRequestContex
 	return *utils.ConvertType[any, OD](&execRes), nil
 }
 
+var operations = make(map[types.OperationType][]string)
+
 type Meta[I, O any] struct {
 	Path string
-	Type int
+	Type types.OperationType
 }
 
-func (m *Meta[I, O]) Execute(input I, context ...*base.InternalClientRequestContext) (O, error) {
+func FetchSubscriptions() []string {
+	return operations[types.OperationType_SUBSCRIPTION]
+}
+
+func NewOperationMeta[I, O any](path string, operationType types.OperationType) *Meta[I, O] {
+	operations[operationType] = append(operations[operationType], path)
+	return &Meta[I, O]{Path: path, Type: operationType}
+}
+
+func (m *Meta[I, O]) Execute(input I, context ...*types.InternalClientRequestContext) (O, error) {
 	requestCtx := DefaultInternalClient.Context
 	if len(context) > 0 {
 		requestCtx = context[0]
@@ -131,5 +135,5 @@ func (m *Meta[I, O]) Execute(input I, context ...*base.InternalClientRequestCont
 		operationDefinitions = DefaultInternalClient.Mutations
 	}
 
-	return executeInternalRequest[I, O](requestCtx, operationDefinitions, base.OperationPath(m.Path), input)
+	return executeInternalRequest[I, O](requestCtx, operationDefinitions, m.Path, input)
 }

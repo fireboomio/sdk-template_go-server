@@ -1,7 +1,8 @@
 package plugins
 
 import (
-	"custom-go/pkg/base"
+	"custom-go/pkg/types"
+	"errors"
 	"github.com/labstack/echo/v4"
 	"github.com/spf13/cast"
 	"net/http"
@@ -13,10 +14,10 @@ type GlobalConfiguration struct {
 }
 
 type HttpTransportBody struct {
-	Request  *base.ClientRequest  `json:"request"`
-	Response *base.ClientResponse `json:"response"`
-	Name     string               `json:"operationName"`
-	Type     string               `json:"operationType"`
+	Request  *types.WunderGraphRequest  `json:"request"`
+	Response *types.WunderGraphResponse `json:"response"`
+	Name     string                     `json:"operationName"`
+	Type     string                     `json:"operationType"`
 }
 
 type WsTransportBody struct {
@@ -24,14 +25,14 @@ type WsTransportBody struct {
 }
 
 type HttpTransportHooks struct {
-	BeforeOriginRequest func(*base.HttpTransportHookRequest, *HttpTransportBody) (*base.ClientRequest, error)
-	AfterOriginResponse func(*base.HttpTransportHookRequest, *HttpTransportBody) (*base.ClientResponse, error)
-	OnOriginRequest     func(*base.HttpTransportHookRequest, *HttpTransportBody) (*base.ClientRequest, error)
-	OnOriginResponse    func(*base.HttpTransportHookRequest, *HttpTransportBody) (*base.ClientResponse, error)
+	BeforeOriginRequest func(*types.HttpTransportHookRequest, *HttpTransportBody) (*types.WunderGraphRequest, error)
+	AfterOriginResponse func(*types.HttpTransportHookRequest, *HttpTransportBody) (*types.WunderGraphResponse, error)
+	OnOriginRequest     func(*types.HttpTransportHookRequest, *HttpTransportBody) (*types.WunderGraphRequest, error)
+	OnOriginResponse    func(*types.HttpTransportHookRequest, *HttpTransportBody) (*types.WunderGraphResponse, error)
 }
 
 type WsTransportHooks struct {
-	OnConnectionInit func(*base.WsTransportHookRequest, *WsTransportBody) (any, error)
+	OnConnectionInit func(*types.WsTransportHookRequest, *WsTransportBody) (any, error)
 }
 
 func RegisterGlobalHooks(e *echo.Echo, globalHooks GlobalConfiguration) {
@@ -39,7 +40,7 @@ func RegisterGlobalHooks(e *echo.Echo, globalHooks GlobalConfiguration) {
 		apiPath := "/global/httpTransport/beforeOriginRequest"
 		e.Logger.Debugf(`Registered globalHook [%s]`, apiPath)
 		e.POST(apiPath, func(c echo.Context) error {
-			brc := c.(*base.HttpTransportHookRequest)
+			brc := c.(*types.HttpTransportHookRequest)
 			var reqBody HttpTransportBody
 			err := c.Bind(&reqBody)
 			if err != nil {
@@ -66,7 +67,7 @@ func RegisterGlobalHooks(e *echo.Echo, globalHooks GlobalConfiguration) {
 		apiPath := "/global/httpTransport/afterOriginResponse"
 		e.Logger.Debugf(`Registered globalHook [%s]`, apiPath)
 		e.POST(apiPath, func(c echo.Context) error {
-			brc := c.(*base.HttpTransportHookRequest)
+			brc := c.(*types.HttpTransportHookRequest)
 			var respBody HttpTransportBody
 			err := c.Bind(&respBody)
 			if err != nil {
@@ -93,7 +94,7 @@ func RegisterGlobalHooks(e *echo.Echo, globalHooks GlobalConfiguration) {
 		apiPath := "/global/httpTransport/onOriginRequest"
 		e.Logger.Debugf(`Registered globalHook [%s]`, apiPath)
 		e.POST(apiPath, func(c echo.Context) error {
-			brc := c.(*base.HttpTransportHookRequest)
+			brc := c.(*types.HttpTransportHookRequest)
 			var reqBody HttpTransportBody
 			err := c.Bind(&reqBody)
 			if err != nil {
@@ -120,7 +121,7 @@ func RegisterGlobalHooks(e *echo.Echo, globalHooks GlobalConfiguration) {
 		apiPath := "/global/httpTransport/onOriginResponse"
 		e.Logger.Debugf(`Registered globalHook [%s]`, apiPath)
 		e.POST(apiPath, func(c echo.Context) error {
-			brc := c.(*base.HttpTransportHookRequest)
+			brc := c.(*types.HttpTransportHookRequest)
 			var respBody HttpTransportBody
 			err := c.Bind(&respBody)
 			if err != nil {
@@ -147,7 +148,7 @@ func RegisterGlobalHooks(e *echo.Echo, globalHooks GlobalConfiguration) {
 		apiPath := "/global/wsTransport/onConnectionInit"
 		e.Logger.Debugf(`Registered globalHook [%s]`, apiPath)
 		e.POST(apiPath, func(c echo.Context) error {
-			brc := c.(*base.WsTransportHookRequest)
+			brc := c.(*types.WsTransportHookRequest)
 			var reqBody WsTransportBody
 			err := c.Bind(&reqBody)
 			if err != nil {
@@ -166,7 +167,8 @@ func RegisterGlobalHooks(e *echo.Echo, globalHooks GlobalConfiguration) {
 
 	// handle not found routes
 	e.HTTPErrorHandler = func(err error, c echo.Context) {
-		if he, ok := err.(*echo.HTTPError); ok {
+		var he *echo.HTTPError
+		if errors.As(err, &he) {
 			_ = c.JSON(he.Code, map[string]string{"error": cast.ToString(he.Message)})
 		} else {
 			_ = c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})

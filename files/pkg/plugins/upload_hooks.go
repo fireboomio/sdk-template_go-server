@@ -1,32 +1,33 @@
 package plugins
 
 import (
-	"custom-go/pkg/base"
+	"custom-go/pkg/types"
 	"custom-go/pkg/utils"
 	"github.com/labstack/echo/v4"
 	"net/http"
 	"path"
 )
 
-type UploadHooks = base.Record[string, UploadHooksProfile]
+type UploadHooks = map[string]UploadHooksProfile
 
 type UploadBody[M any] struct {
-	File  base.WunderGraphFile `json:"file"`
-	Meta  M                    `json:"meta"`
+	File  types.HookFile `json:"file"`
+	Meta  M              `json:"meta"`
 	Error struct {
 		Name    string `json:"name"`
 		Message string `json:"message"`
 	} `json:"error"`
 }
 
-type UploadFunction func(request *base.UploadHookRequest, body *UploadBody[any]) (*base.UploadHookResponse, error)
+type UploadFunction func(request *types.UploadHookRequest, body *UploadBody[any]) (*types.UploadHookResponse, error)
+
 type UploadHooksProfile struct {
 	PreUpload  UploadFunction
 	PostUpload UploadFunction
 }
 
-func ConvertUploadFunc[M any](oldFunc func(*base.UploadHookRequest, *UploadBody[M]) (*base.UploadHookResponse, error)) UploadFunction {
-	return func(hook *base.UploadHookRequest, body *UploadBody[any]) (res *base.UploadHookResponse, err error) {
+func ConvertUploadFunc[M any](oldFunc func(*types.UploadHookRequest, *UploadBody[M]) (*types.UploadHookResponse, error)) UploadFunction {
+	return func(hook *types.UploadHookRequest, body *UploadBody[any]) (res *types.UploadHookResponse, err error) {
 		// 将传入的 OperationBody 转换为需要的类型
 		var input = utils.ConvertType[UploadBody[any], UploadBody[M]](body)
 		// 调用旧函数获取结果
@@ -51,7 +52,7 @@ func preUpload(e *echo.Echo, providerName, profileName string, handler UploadFun
 	apiPath := path.Join("/upload", providerName, profileName, "preUpload")
 	e.Logger.Debugf(`Registered uploadHook [%s]`, apiPath)
 	e.POST(apiPath, func(c echo.Context) error {
-		pur := c.(*base.UploadHookRequest)
+		pur := c.(*types.UploadHookRequest)
 		var param UploadBody[any]
 		err := c.Bind(&param)
 		if err != nil {
@@ -75,7 +76,7 @@ func postUpload(e *echo.Echo, providerName, profileName string, handler UploadFu
 	apiPath := path.Join("/upload", providerName, profileName, "postUpload")
 	e.Logger.Debugf(`Registered uploadHook [%s]`, apiPath)
 	e.POST(apiPath, func(c echo.Context) error {
-		pur := c.(*base.UploadHookRequest)
+		pur := c.(*types.UploadHookRequest)
 		var param UploadBody[any]
 		err := c.Bind(&param)
 		if err != nil {

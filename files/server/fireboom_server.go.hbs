@@ -2,50 +2,44 @@ package server
 
 import (
     "github.com/joho/godotenv"
+    "custom-go/pkg/plugins"
+    "custom-go/pkg/types"
 {{#with hooksConfiguration}}
-    {{~#if authentication}}
-    authentication "custom-go/authentication"
-    {{/if}}
-    {{~#if global.httpTransport}}
-    "custom-go/global"
-    {{/if}}
-    {{~#if (isAnyTrue (isNotEmpty queries) (isNotEmpty mutations) (isNotEmpty subscriptions))}}
+    {{#if authentication}}"custom-go/authentication"{{/if}}
+    {{#if global.httpTransport}}"custom-go/global"{{/if}}
+    {{#if (isAnyTrue (isNotEmpty queries) (isNotEmpty mutations) (isNotEmpty subscriptions))}}
         {{#if (isAbsent onceMap 'custom-go/generated' true)}}
     "custom-go/generated"
         {{/if}}
         {{#each queries as |operationConf operationName|}}
     operation_{{replaceSpecial operationName "__"}} "custom-go/operation/{{operationName}}"
-        {{/each}}
+        {{~/each}}
         {{#each mutations as |operationConf operationName|}}
     operation_{{replaceSpecial operationName "__"}} "custom-go/operation/{{operationName}}"
-        {{/each}}
+        {{~/each}}
         {{#each subscriptions as |operationConf operationName|}}
     operation_{{replaceSpecial operationName "__"}} "custom-go/operation/{{operationName}}"
-        {{/each}}
-    {{/if}}
+        {{~/each}}
+    {{/if~}}
 {{/with}}
-    "custom-go/pkg/base"
-    "custom-go/pkg/plugins"
-    "custom-go/pkg/types"
 {{#each s3Providers}}
     {{#each uploadProfiles}}
-        {{#if (isAnyTrue hooks.preUpload hooks.postUpload)}}
-            {{#if (isAbsent onceMap 'custom-go/generated')}}
-    "custom-go/generated"
-            {{/if}}
+        {{~#if (isAnyTrue hooks.preUpload hooks.postUpload)}}
+    {{#if (isAbsent onceMap 'custom-go/generated')}}"custom-go/generated"{{/if}}
     {{fmtSprintf 'storage_%s_%s' name @key}} "{{fmtSprintf 'custom-go/storage/%s/%s' name @key}}"
-        {{/if}}
+        {{~/if}}
     {{/each}}
 {{/each}}
 )
 
-const nodeEnvFilepath = "{{nodeEnvFilepath}}"
-
 func init() {
-    _ = godotenv.Overload(nodeEnvFilepath)
+    _ = godotenv.Overload("{{nodeEnvFilepath}}")
+    types.PublicNodeUrl = "{{baseURL}}"
+    types.PrivateNodeUrl = "{{internalBaseURL}}"
+    types.ServerListenAddress = "{{serverListenAddress}}"
 
-    types.WdgHooksAndServerConfig = types.WunderGraphHooksAndServerConfig{
-        Hooks: types.HooksConfiguration{
+    plugins.WdgHooksAndServerConfig = plugins.WunderGraphHooksAndServerConfig{
+        Hooks: plugins.HooksConfiguration{
     {{#with hooksConfiguration}}
             Global: plugins.GlobalConfiguration{
         {{#if global.httpTransport}}
@@ -66,7 +60,7 @@ func init() {
                 {{upperFirst this}}: authentication.{{upperFirst this}},
         {{/each}}
             },
-            Queries: base.OperationHooks{
+            Queries: types.OperationHooks{
         {{#each queries as |hooks operationName|}}
                 "{{operationName}}": {
             {{#each hooks}}
@@ -75,7 +69,7 @@ func init() {
                 },
         {{/each}}
             },
-            Mutations: base.OperationHooks{
+            Mutations: types.OperationHooks{
         {{#each mutations as |hooks operationName|}}
                 "{{operationName}}": {
             {{#each hooks}}

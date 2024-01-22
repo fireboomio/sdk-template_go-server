@@ -1,38 +1,24 @@
 package plugins
 
 import (
-	"custom-go/pkg/base"
-	"encoding/base64"
+	"custom-go/pkg/types"
 	"errors"
 	"github.com/labstack/echo/v4"
 	"net/http"
 	"path"
-	"strings"
 )
 
 type AuthenticationResponse struct {
-	Message string                `json:"message"`
-	Status  string                `json:"status"`
-	User    *base.WunderGraphUser `json:"user"`
+	Message string      `json:"message"`
+	Status  string      `json:"status"`
+	User    *types.User `json:"user"`
 }
 
 type AuthenticationConfiguration struct {
-	PostAuthentication         func(hook *base.AuthenticationHookRequest) error
-	MutatingPostAuthentication func(hook *base.AuthenticationHookRequest) (*AuthenticationResponse, error)
-	RevalidateAuthentication   func(hook *base.AuthenticationHookRequest) (*AuthenticationResponse, error)
-	PostLogout                 func(hook *base.AuthenticationHookRequest) error
-}
-
-func TryParseJWT(token string) []byte {
-	parts := strings.Split(token, ".")
-	if len(parts) != 3 {
-		return nil
-	}
-	payload, err := base64.RawURLEncoding.DecodeString(parts[1])
-	if err != nil {
-		return nil
-	}
-	return payload
+	PostAuthentication         func(hook *types.AuthenticationHookRequest) error
+	MutatingPostAuthentication func(hook *types.AuthenticationHookRequest) (*AuthenticationResponse, error)
+	RevalidateAuthentication   func(hook *types.AuthenticationHookRequest) (*AuthenticationResponse, error)
+	PostLogout                 func(hook *types.AuthenticationHookRequest) error
 }
 
 func RegisterAuthHooks(e *echo.Echo, authHooks AuthenticationConfiguration) {
@@ -41,7 +27,7 @@ func RegisterAuthHooks(e *echo.Echo, authHooks AuthenticationConfiguration) {
 	// preHandler hook - check user context
 	auth.Use(func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
-			brc := c.(*base.AuthenticationHookRequest)
+			brc := c.(*types.AuthenticationHookRequest)
 			if brc.User == nil {
 				return errors.New("user context doesn't exist")
 			}
@@ -54,7 +40,7 @@ func RegisterAuthHooks(e *echo.Echo, authHooks AuthenticationConfiguration) {
 		apiPath := "/postAuthentication"
 		e.Logger.Debugf(`Registered authHook [%s]`, path.Join(authPrefix, apiPath))
 		auth.POST(apiPath, func(c echo.Context) error {
-			brc := c.(*base.AuthenticationHookRequest)
+			brc := c.(*types.AuthenticationHookRequest)
 			err := authHooks.PostAuthentication(brc)
 			if err != nil {
 				return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
@@ -70,7 +56,7 @@ func RegisterAuthHooks(e *echo.Echo, authHooks AuthenticationConfiguration) {
 		apiPath := "/mutatingPostAuthentication"
 		e.Logger.Debugf(`Registered authHook [%s]`, path.Join(authPrefix, apiPath))
 		auth.POST(apiPath, func(c echo.Context) error {
-			brc := c.(*base.AuthenticationHookRequest)
+			brc := c.(*types.AuthenticationHookRequest)
 			out, err := authHooks.MutatingPostAuthentication(brc)
 			if err != nil {
 				return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
@@ -88,7 +74,7 @@ func RegisterAuthHooks(e *echo.Echo, authHooks AuthenticationConfiguration) {
 		apiPath := "/revalidateAuthentication"
 		e.Logger.Debugf(`Registered authHook [%s]`, path.Join(authPrefix, apiPath))
 		auth.POST(apiPath, func(c echo.Context) error {
-			brc := c.(*base.AuthenticationHookRequest)
+			brc := c.(*types.AuthenticationHookRequest)
 			out, err := authHooks.RevalidateAuthentication(brc)
 			if err != nil {
 				return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
@@ -106,7 +92,7 @@ func RegisterAuthHooks(e *echo.Echo, authHooks AuthenticationConfiguration) {
 		apiPath := "/postLogout"
 		e.Logger.Debugf(`Registered authHook [%s]`, path.Join(authPrefix, apiPath))
 		auth.POST(apiPath, func(c echo.Context) error {
-			brc := c.(*base.AuthenticationHookRequest)
+			brc := c.(*types.AuthenticationHookRequest)
 			err := authHooks.PostLogout(brc)
 			if err != nil {
 				return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
