@@ -1,8 +1,17 @@
 package types
 
 import (
+	"custom-go/pkg/utils"
 	"os"
+	"path/filepath"
 )
+
+var WdgGraphConfig WunderGraphConfiguration
+
+func init() {
+	configJsonPath := filepath.Join("generated", "fireboom.config.json")
+	_ = utils.ReadStructAndCacheFile(configJsonPath, &WdgGraphConfig)
+}
 
 func GetConfigurationVal(val *ConfigurationVariable) (result string) {
 	if val == nil {

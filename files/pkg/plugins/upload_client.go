@@ -5,6 +5,7 @@ import (
 	"custom-go/pkg/types"
 	"encoding/json"
 	"fmt"
+	"github.com/labstack/echo/v4"
 	"io"
 	"mime/multipart"
 	"net/http"
@@ -27,16 +28,22 @@ type (
 	UploadResponse []struct {
 		Key string `json:"key"`
 	}
-	UploadClient struct {
-		Name       string
-		Endpoint   string
-		BucketName string
-		UseSSL     bool
-	}
+	UploadClient types.S3UploadConfiguration
 )
 
-func NewUploadClient(Name string, Endpoint string, BucketName string, UseSSL bool) *UploadClient {
-	return &UploadClient{Name: Name, Endpoint: Endpoint, BucketName: BucketName, UseSSL: UseSSL}
+func NewUploadClient(Name string) *UploadClient {
+	client := &UploadClient{Name: Name}
+	types.AddRegisteredHook(func(_ echo.Logger) {
+		for _, v := range types.WdgGraphConfig.Api.S3UploadConfiguration {
+			if v.Name == Name {
+				client.UseSSL = v.UseSSL
+				client.Endpoint = v.Endpoint
+				client.BucketName = v.BucketName
+				break
+			}
+		}
+	})
+	return client
 }
 
 var uploadHttpClient = http.Client{Timeout: 30 * time.Second}

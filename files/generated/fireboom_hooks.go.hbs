@@ -23,7 +23,7 @@ type (
 
 var (
 {{#each s3Providers}}
-    UploadClient_{{name}} = plugins.NewUploadClient("{{name}}", "{{getVariableString endpoint}}", "{{getVariableString bucketName}}", {{useSSL}})
+    UploadClient_{{name}} = plugins.NewUploadClient("{{name}}")
 {{/each}}
 )
 

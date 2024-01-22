@@ -142,6 +142,12 @@ func configureWunderGraphServer() *echo.Echo {
 }
 
 func startServer() error {
+	graphqlApi := types.WdgGraphConfig.Api
+	types.PublicNodeUrl = types.GetConfigurationVal(graphqlApi.NodeOptions.PublicNodeUrl)
+	types.PrivateNodeUrl = types.GetConfigurationVal(graphqlApi.NodeOptions.NodeUrl)
+	serverListen := graphqlApi.ServerOptions.Listen
+	types.ServerListenAddress = types.GetConfigurationVal(serverListen.Host) + ":" + types.GetConfigurationVal(serverListen.Port)
+
 	// 配置服务器
 	wdgServer := configureWunderGraphServer()
 
