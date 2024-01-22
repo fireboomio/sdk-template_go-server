@@ -16,7 +16,7 @@ type {{upperFirst (joinString '_' documentPath)~}}
 {{~else}} struct {
 {{#each fields}}
     {{#if description}}/* {{description}} */
-{{/if}}{{upperFirst (trimPrefix name '_')}} {{#if isArray}}[]{{~/if~}}
+    {{/if}}{{upperFirst (trimPrefix name '_')}} {{#if isArray}}[]{{~/if~}}
 {{~> field_type this=this}} `json:"{{name}}{{#unless required}},omitempty{{/unless}}"`
 {{/each}}
 }{{/if}}
