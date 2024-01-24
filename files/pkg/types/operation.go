@@ -11,11 +11,7 @@ type (
 	OperationBodyResponse[O any] struct {
 		DataAny any            `json:"dataAny,omitempty"`
 		Data    O              `json:"data"`
-		Errors  []GraphQLError `json:"errors"`
-	}
-	GraphQLError struct {
-		Message string `json:"message"`
-		Path    []any  `json:"path"`
+		Errors  []RequestError `json:"errors"`
 	}
 )
 
