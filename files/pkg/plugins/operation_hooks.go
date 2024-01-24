@@ -6,22 +6,11 @@ import (
 	"fmt"
 	"github.com/labstack/echo/v4"
 	"net/http"
-	"path"
 	"strconv"
+	"strings"
 )
 
-const (
-	maximumRecursionLimit = 16
-)
-
-const (
-	mockResolveKey         = "mockResolve"
-	preResolveKey          = "preResolve"
-	postResolveKey         = "postResolve"
-	mutatingPreResolveKey  = "mutatingPreResolve"
-	mutatingPostResolveKey = "mutatingPostResolve"
-	customResolveKey       = "customResolve"
-)
+const maximumRecursionLimit = 16
 
 func ConvertBodyFunc[I, O any](oldFunc func(*types.HookRequest, *types.OperationBody[I, O]) (*types.OperationBody[I, O], error)) types.OperationHookFunction {
 	return func(hook *types.HookRequest, body *types.OperationBody[any, any]) (res *types.OperationBody[any, any], err error) {
@@ -46,41 +35,40 @@ func RegisterOperationsHooks(e *echo.Echo, operations []string, operationHooksMa
 
 func registerOperationHooks(e *echo.Echo, operationPath string, operationHooksMap types.OperationHooks) {
 	if operationHook, ok := operationHooksMap[operationPath]; ok {
-		pathPrefix := path.Join("/operation", operationPath)
 		if operationHook.MockResolve != nil {
-			apiPath := path.Join(pathPrefix, mockResolveKey)
+			apiPath := strings.ReplaceAll(string(types.Endpoint_mockResolve), "{path}", operationPath)
 			e.Logger.Debugf(`Registered operationHook [%s]`, apiPath)
-			e.POST(apiPath, buildOperationHook(operationPath, mockResolveKey, operationHook.MockResolve, mockResolve))
+			e.POST(apiPath, buildOperationHook(operationPath, types.MiddlewareHook_mockResolve, operationHook.MockResolve, mockResolve))
 		}
 
 		if operationHook.PreResolve != nil {
-			apiPath := path.Join(pathPrefix, preResolveKey)
+			apiPath := strings.ReplaceAll(string(types.Endpoint_preResolve), "{path}", operationPath)
 			e.Logger.Debugf(`Registered operationHook [%s]`, apiPath)
-			e.POST(apiPath, buildOperationHook(operationPath, preResolveKey, operationHook.PreResolve, preResolve))
+			e.POST(apiPath, buildOperationHook(operationPath, types.MiddlewareHook_preResolve, operationHook.PreResolve, preResolve))
 		}
 
 		if operationHook.PostResolve != nil {
-			apiPath := path.Join(pathPrefix, postResolveKey)
+			apiPath := strings.ReplaceAll(string(types.Endpoint_postResolve), "{path}", operationPath)
 			e.Logger.Debugf(`Registered operationHook [%s]`, apiPath)
-			e.POST(apiPath, buildOperationHook(operationPath, postResolveKey, operationHook.PostResolve, postResolve))
+			e.POST(apiPath, buildOperationHook(operationPath, types.MiddlewareHook_postResolve, operationHook.PostResolve, postResolve))
 		}
 
 		if operationHook.MutatingPreResolve != nil {
-			apiPath := path.Join(pathPrefix, mutatingPreResolveKey)
+			apiPath := strings.ReplaceAll(string(types.Endpoint_mutatingPreResolve), "{path}", operationPath)
 			e.Logger.Debugf(`Registered operationHook [%s]`, apiPath)
-			e.POST(apiPath, buildOperationHook(operationPath, mutatingPreResolveKey, operationHook.MutatingPreResolve, mutatingPreResolve))
+			e.POST(apiPath, buildOperationHook(operationPath, types.MiddlewareHook_mutatingPreResolve, operationHook.MutatingPreResolve, mutatingPreResolve))
 		}
 
 		if operationHook.MutatingPostResolve != nil {
-			apiPath := path.Join(pathPrefix, mutatingPostResolveKey)
+			apiPath := strings.ReplaceAll(string(types.Endpoint_mutatingPostResolve), "{path}", operationPath)
 			e.Logger.Debugf(`Registered operationHook [%s]`, apiPath)
-			e.POST(apiPath, buildOperationHook(operationPath, mutatingPostResolveKey, operationHook.MutatingPostResolve, mutatingPostResolve))
+			e.POST(apiPath, buildOperationHook(operationPath, types.MiddlewareHook_mutatingPostResolve, operationHook.MutatingPostResolve, mutatingPostResolve))
 		}
 
 		if operationHook.CustomResolve != nil {
-			apiPath := path.Join(pathPrefix, customResolveKey)
+			apiPath := strings.ReplaceAll(string(types.Endpoint_customResolve), "{path}", operationPath)
 			e.Logger.Debugf(`Registered operationHook [%s]`, apiPath)
-			e.POST(apiPath, buildOperationHook(operationPath, customResolveKey, operationHook.CustomResolve, customResolve))
+			e.POST(apiPath, buildOperationHook(operationPath, types.MiddlewareHook_customResolve, operationHook.CustomResolve, customResolve))
 		}
 	}
 }
@@ -135,7 +123,7 @@ func customResolve(in, out *types.OperationBody[any, any]) {
 	in.SetClientRequestHeaders = out.SetClientRequestHeaders
 }
 
-func buildOperationHook(operationName, hookName string, hookFunction types.OperationHookFunction, action func(in, out *types.OperationBody[any, any])) echo.HandlerFunc {
+func buildOperationHook(operationName string, hookName types.MiddlewareHook, hookFunction types.OperationHookFunction, action func(in, out *types.OperationBody[any, any])) echo.HandlerFunc {
 	return func(c echo.Context) (err error) {
 		c.Response().Header().Set(echo.HeaderContentType, echo.MIMEApplicationJSONCharsetUTF8)
 		c.Response().WriteHeader(http.StatusOK)
@@ -153,7 +141,7 @@ func buildOperationHook(operationName, hookName string, hookFunction types.Opera
 
 		in.Op = operationName
 		in.Hook = hookName
-		in.SetClientRequestHeaders = headersToObject(c.Request().Header)
+		in.SetClientRequestHeaders = HeadersToObject(c.Request().Header)
 		out, err := hookFunction(hookRequest, &in)
 		if err != nil {
 			return err
@@ -166,7 +154,7 @@ func buildOperationHook(operationName, hookName string, hookFunction types.Opera
 	}
 }
 
-func headersToObject(headers http.Header) map[string]string {
+func HeadersToObject(headers http.Header) map[string]string {
 	obj := make(map[string]string)
 	for key, values := range headers {
 		if len(values) > 0 {

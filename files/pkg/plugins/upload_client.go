@@ -9,6 +9,7 @@ import (
 	"io"
 	"mime/multipart"
 	"net/http"
+	"strings"
 	"time"
 )
 
@@ -24,9 +25,6 @@ type (
 	UploadFile struct {
 		Reader io.Reader
 		Name   string
-	}
-	UploadResponse []struct {
-		Key string `json:"key"`
 	}
 	UploadClient types.S3UploadConfiguration
 )
@@ -48,7 +46,7 @@ func NewUploadClient(Name string) *UploadClient {
 
 var uploadHttpClient = http.Client{Timeout: 30 * time.Second}
 
-func (u *UploadClient) Upload(parameter *UploadParameter) (uploadResp UploadResponse, err error) {
+func (u *UploadClient) Upload(parameter *UploadParameter) (uploadResp types.UploadedFiles, err error) {
 	body := new(bytes.Buffer)
 
 	writer := multipart.NewWriter(body)
@@ -68,7 +66,7 @@ func (u *UploadClient) Upload(parameter *UploadParameter) (uploadResp UploadResp
 		return
 	}
 
-	uploadPath := types.PrivateNodeUrl + fmt.Sprintf("/s3/%s/upload", u.Name)
+	uploadPath := types.PrivateNodeUrl + strings.ReplaceAll(string(types.InternalEndpoint_s3upload), "{provider}", u.Name)
 	if len(parameter.Directory) > 0 {
 		uploadPath += "?directory=" + parameter.Directory
 	}

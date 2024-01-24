@@ -334,7 +334,7 @@ type MTLSConfiguration struct {
 
 type MiddlewareHookResponse struct {
 	Error                   string         `json:"error,omitempty"`
-	Hook                    string         `json:"hook"`
+	Hook                    MiddlewareHook `json:"hook"`
 	Input                   any            `json:"input"`
 	Op                      string         `json:"op"`
 	Response                any            `json:"response"`
@@ -381,7 +381,7 @@ type OnRequestHookResponse struct {
 type OnResponseHookPayload struct {
 	Wg            *BaseRequestBodyWg   `json:"__wg"`
 	OperationName string               `json:"operationName"`
-	OperationType string               `json:"operationType"`
+	OperationType OperationTypeString  `json:"operationType"`
 	Response      *WunderGraphResponse `json:"response"`
 }
 
@@ -631,6 +631,12 @@ type UploadHookResponse struct {
 	FileKey string `json:"fileKey"`
 }
 
+type UploadedFile struct {
+	Key string `json:"key"`
+}
+
+type UploadedFiles []*UploadedFile
+
 type UpstreamAuthentication struct {
 	JwtConfig                        *JwtUpstreamAuthenticationConfig                  `json:"jwtConfig"`
 	JwtWithAccessTokenExchangeConfig *JwtUpstreamAuthenticationWithAccessTokenExchange `json:"jwtWithAccessTokenExchangeConfig"`
@@ -793,8 +799,8 @@ const (
 type ClaimType int64
 
 const (
-	ClaimType_PROVIDER           ClaimType = 0
-	ClaimType_USERID             ClaimType = 1
+	ClaimType_ISSUER             ClaimType = 0
+	ClaimType_SUBJECT            ClaimType = 1
 	ClaimType_WEBSITE            ClaimType = 10
 	ClaimType_EMAIL              ClaimType = 11
 	ClaimType_EMAIL_VERIFIED     ClaimType = 12
@@ -1027,6 +1033,7 @@ type InternalEndpoint string
 const (
 	InternalEndpoint_internalTransaction InternalEndpoint = "/internal/notifyTransactionFinish"
 	InternalEndpoint_internalRequest     InternalEndpoint = "/internal/operations/{path}"
+	InternalEndpoint_s3upload            InternalEndpoint = "/s3/{provider}/upload"
 )
 
 type OperationField string

@@ -95,7 +95,7 @@ func configureWunderGraphServer() *echo.Echo {
 				body.Wg.ClientRequest = &types.WunderGraphRequest{
 					Method:     c.Request().Method,
 					RequestURI: c.Request().RequestURI,
-					Headers:    map[string]string{},
+					Headers:    plugins.HeadersToObject(c.Request().Header),
 				}
 			} else {
 				for name, value := range body.Wg.ClientRequest.Headers {
@@ -104,8 +104,9 @@ func configureWunderGraphServer() *echo.Echo {
 					}
 				}
 			}
-			reqId := c.Request().Header.Get("X-Request-Id")
-			internalClient := types.InternalClientFactoryCall(map[string]string{"X-Request-Id": reqId}, body.Wg.ClientRequest, body.Wg.User)
+			headerRequestIdKey := string(types.RequestHeaderKey_X_Request_Id)
+			reqId := c.Request().Header.Get(headerRequestIdKey)
+			internalClient := types.InternalClientFactoryCall(map[string]string{headerRequestIdKey: reqId}, body.Wg)
 			internalClient.Queries = internalQueries
 			internalClient.Mutations = internalMutations
 			brc := &types.BaseRequestContext{
@@ -131,10 +132,9 @@ func configureWunderGraphServer() *echo.Echo {
 		return context.Background()
 	}
 	// 健康检查
-	e.GET("/health", func(c echo.Context) error {
-		return c.JSON(http.StatusOK, map[string]interface{}{
-			"status": "ok",
-			"report": healthReport,
+	e.GET(string(types.Endpoint_health), func(c echo.Context) error {
+		return c.JSON(http.StatusOK, types.Health{
+			Status: "ok", Report: &healthReport.HealthReport,
 		})
 	})
 

@@ -5,21 +5,21 @@ import (
 	"custom-go/pkg/utils"
 	"encoding/json"
 	"github.com/labstack/echo/v4"
+	"net/http"
 	"os"
-	"path"
 	"path/filepath"
+	"strings"
 )
 
 type httpProxyHookFunction func(*types.HttpTransportHookRequest, *HttpTransportBody) (*types.WunderGraphResponse, error)
 
 func RegisterProxyHook(hookFunc httpProxyHookFunction, operationType ...types.OperationType) {
 	callerName := utils.GetCallerName(string(types.HookParent_proxy))
-	apiPrefixPath := "/" + string(types.HookParent_proxy)
-	apiPath := path.Join(apiPrefixPath, callerName)
+	apiPath := strings.ReplaceAll(string(types.Endpoint_proxy), "{path}", callerName)
 
 	types.AddEchoRouterFunc(func(e *echo.Echo) {
 		e.Logger.Debugf(`Registered hookFunction [%s]`, apiPath)
-		e.POST(apiPath, BuildHookFunc(hookFunc))
+		e.POST(apiPath, buildProxyFunc(hookFunc))
 	})
 
 	types.AddHealthFunc(func(e *echo.Echo, report *types.HealthReportLock) {
@@ -54,4 +54,29 @@ func RegisterProxyHook(hookFunc httpProxyHookFunction, operationType ...types.Op
 		defer report.Unlock()
 		report.Proxys = append(report.Proxys, callerName)
 	})
+}
+
+func buildProxyFunc(proxyHook httpProxyHookFunction) echo.HandlerFunc {
+	return func(c echo.Context) (err error) {
+		brc := c.(*types.HttpTransportHookRequest)
+
+		var reqBody HttpTransportBody
+		err = c.Bind(&reqBody)
+		if err != nil {
+			return echo.NewHTTPError(http.StatusBadRequest, err.Error())
+		}
+
+		newResp, err := proxyHook(brc, &reqBody)
+		if err != nil {
+			return echo.NewHTTPError(http.StatusBadRequest, err.Error())
+		}
+		resp := types.MiddlewareHookResponse{
+			Op:   reqBody.Name,
+			Hook: types.MiddlewareHook(types.HookParent_proxy),
+		}
+		if newResp != nil {
+			resp.Response = types.OnResponseHookResponse{Response: newResp}
+		}
+		return c.JSON(http.StatusOK, resp)
+	}
 }

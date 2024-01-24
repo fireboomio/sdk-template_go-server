@@ -5,7 +5,7 @@ import (
 	"custom-go/pkg/utils"
 	"github.com/labstack/echo/v4"
 	"net/http"
-	"path"
+	"strings"
 )
 
 type UploadHooks = map[string]UploadHooksProfile
@@ -49,7 +49,8 @@ func RegisterUploadsHooks(e *echo.Echo, uploadHooksMap map[string]UploadHooks) {
 }
 
 func preUpload(e *echo.Echo, providerName, profileName string, handler UploadFunction) {
-	apiPath := path.Join("/upload", providerName, profileName, "preUpload")
+	apiPath := strings.ReplaceAll(string(types.Endpoint_preUpload), "{provider}", providerName)
+	apiPath = strings.ReplaceAll(apiPath, "{profile}", profileName)
 	e.Logger.Debugf(`Registered uploadHook [%s]`, apiPath)
 	e.POST(apiPath, func(c echo.Context) error {
 		pur := c.(*types.UploadHookRequest)
@@ -73,7 +74,8 @@ func preUpload(e *echo.Echo, providerName, profileName string, handler UploadFun
 }
 
 func postUpload(e *echo.Echo, providerName, profileName string, handler UploadFunction) {
-	apiPath := path.Join("/upload", providerName, profileName, "postUpload")
+	apiPath := strings.ReplaceAll(string(types.Endpoint_postUpload), "{provider}", providerName)
+	apiPath = strings.ReplaceAll(apiPath, "{profile}", profileName)
 	e.Logger.Debugf(`Registered uploadHook [%s]`, apiPath)
 	e.POST(apiPath, func(c echo.Context) error {
 		pur := c.(*types.UploadHookRequest)

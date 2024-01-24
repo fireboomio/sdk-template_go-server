@@ -3,7 +3,7 @@ package types
 type (
 	OperationBody[I, O any] struct {
 		Op                      string                    `json:"op,omitempty"`
-		Hook                    string                    `json:"hook,omitempty"`
+		Hook                    MiddlewareHook            `json:"hook,omitempty"`
 		Input                   I                         `json:"input,omitempty"`
 		Response                *OperationBodyResponse[O] `json:"response"`
 		SetClientRequestHeaders map[string]string         `json:"setClientRequestHeaders,omitempty"`

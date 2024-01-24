@@ -106,7 +106,7 @@ var htmlBytesMap = make(map[string][]byte, 0)
 func RegisterGraphql(schema *graphql.Schema) {
 	// eg. customize/test
 	callerName := GetCallerName(string(types.HookParent_customize))
-	routeUrl := fmt.Sprintf(`/gqls/%s/graphql`, callerName)
+	routeUrl := strings.ReplaceAll(string(types.Endpoint_customize), "{name}", callerName)
 	var hasSubscriptionFieldResolveFn bool
 	if subscriptionType := schema.SubscriptionType(); subscriptionType != nil {
 		for _, definition := range subscriptionType.Fields() {

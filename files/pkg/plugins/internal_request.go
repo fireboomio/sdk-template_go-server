@@ -19,8 +19,8 @@ var DefaultInternalClient *types.InternalClient
 func BuildDefaultInternalClient(queries types.OperationDefinitions, mutations types.OperationDefinitions) {
 	DefaultInternalClient = &types.InternalClient{
 		Context: &types.InternalClientRequestContext{
-			ClientRequest: &types.WunderGraphRequest{
-				Headers: map[string]string{},
+			BaseRequestBodyWg: &types.BaseRequestBodyWg{
+				ClientRequest: &types.WunderGraphRequest{Headers: map[string]string{}},
 			},
 		},
 		Queries:   queries,

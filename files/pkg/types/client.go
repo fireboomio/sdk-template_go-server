@@ -16,9 +16,8 @@ type (
 		Mutations OperationDefinitions
 	}
 	InternalClientRequestContext struct {
-		ExtraHeaders  map[string]string
-		ClientRequest *WunderGraphRequest
-		User          *User
+		ExtraHeaders map[string]string
+		*BaseRequestBodyWg
 	}
 )
 
@@ -27,12 +26,11 @@ func (i *InternalClient) WithHeaders(headers map[string]string) *InternalClient 
 	return i
 }
 
-func InternalClientFactoryCall(headers map[string]string, clientRequest *WunderGraphRequest, user *User) *InternalClient {
+func InternalClientFactoryCall(headers map[string]string, wg *BaseRequestBodyWg) *InternalClient {
 	client := &InternalClient{
 		Context: &InternalClientRequestContext{
-			ExtraHeaders:  headers,
-			ClientRequest: clientRequest,
-			User:          user,
+			ExtraHeaders:      headers,
+			BaseRequestBodyWg: wg,
 		},
 	}
 	return client

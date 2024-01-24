@@ -9,7 +9,6 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/tidwall/sjson"
 	"os"
-	"path"
 	"path/filepath"
 	"strings"
 )
@@ -23,12 +22,11 @@ const (
 
 func RegisterFunction[I, O any](hookFunc func(*types.HookRequest, *types.OperationBody[I, O]) (*types.OperationBody[I, O], error), operationType ...types.OperationType) {
 	callerName := utils.GetCallerName(string(types.HookParent_function))
-	apiPrefixPath := "/" + string(types.HookParent_function)
-	apiPath := path.Join(apiPrefixPath, callerName)
+	apiPath := strings.ReplaceAll(string(types.Endpoint_function), "{path}", callerName)
 
 	types.AddEchoRouterFunc(func(e *echo.Echo) {
 		e.Logger.Debugf(`Registered hookFunction [%s]`, apiPath)
-		e.POST(apiPath, buildOperationHook(callerName, string(types.HookParent_function), ConvertBodyFunc[I, O](hookFunc), func(in, out *types.OperationBody[any, any]) {
+		e.POST(apiPath, buildOperationHook(callerName, types.MiddlewareHook(types.HookParent_function), ConvertBodyFunc[I, O](hookFunc), func(in, out *types.OperationBody[any, any]) {
 			in.Response = out.Response
 		}))
 	})

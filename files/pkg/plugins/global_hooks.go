@@ -37,7 +37,7 @@ type WsTransportHooks struct {
 
 func RegisterGlobalHooks(e *echo.Echo, globalHooks GlobalConfiguration) {
 	if globalHooks.HttpTransport.BeforeOriginRequest != nil {
-		apiPath := "/global/httpTransport/beforeOriginRequest"
+		apiPath := string(types.Endpoint_beforeOriginRequest)
 		e.Logger.Debugf(`Registered globalHook [%s]`, apiPath)
 		e.POST(apiPath, func(c echo.Context) error {
 			brc := c.(*types.HttpTransportHookRequest)
@@ -51,20 +51,19 @@ func RegisterGlobalHooks(e *echo.Echo, globalHooks GlobalConfiguration) {
 			if err != nil {
 				return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
 			}
-			resp := map[string]interface{}{
-				"op":       reqBody.Name,
-				"hook":     "beforeOriginRequest",
-				"response": map[string]interface{}{},
+			resp := types.MiddlewareHookResponse{
+				Op:   reqBody.Name,
+				Hook: types.MiddlewareHook_beforeOriginRequest,
 			}
 			if newReq != nil {
-				resp["response"].(map[string]interface{})["request"] = newReq
+				resp.Response = types.OnRequestHookResponse{Request: newReq}
 			}
 			return c.JSON(http.StatusOK, resp)
 		})
 	}
 
 	if globalHooks.HttpTransport.AfterOriginResponse != nil {
-		apiPath := "/global/httpTransport/afterOriginResponse"
+		apiPath := string(types.Endpoint_afterOriginResponse)
 		e.Logger.Debugf(`Registered globalHook [%s]`, apiPath)
 		e.POST(apiPath, func(c echo.Context) error {
 			brc := c.(*types.HttpTransportHookRequest)
@@ -78,20 +77,19 @@ func RegisterGlobalHooks(e *echo.Echo, globalHooks GlobalConfiguration) {
 			if err != nil {
 				return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
 			}
-			resp := map[string]interface{}{
-				"op":       respBody.Name,
-				"hook":     "onOriginResponse",
-				"response": map[string]interface{}{},
+			resp := types.MiddlewareHookResponse{
+				Op:   respBody.Name,
+				Hook: types.MiddlewareHook_afterOriginResponse,
 			}
 			if newResp != nil {
-				resp["response"].(map[string]interface{})["response"] = newResp
+				resp.Response = types.OnResponseHookResponse{Response: newResp}
 			}
 			return c.JSON(http.StatusOK, resp)
 		})
 	}
 
 	if globalHooks.HttpTransport.OnOriginRequest != nil {
-		apiPath := "/global/httpTransport/onOriginRequest"
+		apiPath := string(types.Endpoint_onOriginRequest)
 		e.Logger.Debugf(`Registered globalHook [%s]`, apiPath)
 		e.POST(apiPath, func(c echo.Context) error {
 			brc := c.(*types.HttpTransportHookRequest)
@@ -105,20 +103,19 @@ func RegisterGlobalHooks(e *echo.Echo, globalHooks GlobalConfiguration) {
 			if err != nil {
 				return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
 			}
-			resp := map[string]interface{}{
-				"op":       reqBody.Name,
-				"hook":     "onOriginRequest",
-				"response": map[string]interface{}{},
+			resp := types.MiddlewareHookResponse{
+				Op:   reqBody.Name,
+				Hook: types.MiddlewareHook_onOriginRequest,
 			}
 			if newReq != nil {
-				resp["response"].(map[string]interface{})["request"] = newReq
+				resp.Response = types.OnRequestHookResponse{Request: newReq}
 			}
 			return c.JSON(http.StatusOK, resp)
 		})
 	}
 
 	if globalHooks.HttpTransport.OnOriginResponse != nil {
-		apiPath := "/global/httpTransport/onOriginResponse"
+		apiPath := string(types.Endpoint_onOriginResponse)
 		e.Logger.Debugf(`Registered globalHook [%s]`, apiPath)
 		e.POST(apiPath, func(c echo.Context) error {
 			brc := c.(*types.HttpTransportHookRequest)
@@ -132,20 +129,19 @@ func RegisterGlobalHooks(e *echo.Echo, globalHooks GlobalConfiguration) {
 			if err != nil {
 				return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
 			}
-			resp := map[string]interface{}{
-				"op":       respBody.Name,
-				"hook":     "onOriginResponse",
-				"response": map[string]interface{}{},
+			resp := types.MiddlewareHookResponse{
+				Op:   respBody.Name,
+				Hook: types.MiddlewareHook_onOriginResponse,
 			}
 			if newResp != nil {
-				resp["response"].(map[string]interface{})["response"] = newResp
+				resp.Response = types.OnResponseHookResponse{Response: newResp}
 			}
 			return c.JSON(http.StatusOK, resp)
 		})
 	}
 
 	if globalHooks.WsTransport.OnConnectionInit != nil {
-		apiPath := "/global/wsTransport/onConnectionInit"
+		apiPath := string(types.Endpoint_onConnectionInit)
 		e.Logger.Debugf(`Registered globalHook [%s]`, apiPath)
 		e.POST(apiPath, func(c echo.Context) error {
 			brc := c.(*types.WsTransportHookRequest)
@@ -158,9 +154,9 @@ func RegisterGlobalHooks(e *echo.Echo, globalHooks GlobalConfiguration) {
 			if err != nil {
 				return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
 			}
-			return c.JSON(http.StatusOK, map[string]interface{}{
-				"hook":     "onConnectionInit",
-				"response": resp,
+			return c.JSON(http.StatusOK, types.MiddlewareHookResponse{
+				Hook:     types.MiddlewareHook_onConnectionInit,
+				Response: resp,
 			})
 		})
 	}
