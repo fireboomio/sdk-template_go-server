@@ -56,11 +56,11 @@ const (
 
 type GraphqlRequestContext struct {
 	context.Context
+	echo.Logger
 	User           *types.User
 	InternalClient *types.InternalClient
-	Logger         echo.Logger
+	Headers        types.RequestHeaders
 	Result         *GraphqlResultChan
-	Request        *http.Request
 }
 
 type GraphqlResultChan struct {
@@ -144,11 +144,11 @@ func RegisterGraphql(schema *graphql.Schema) {
 
 			brc := c.(*types.BaseRequestContext)
 			grc := &GraphqlRequestContext{
-				Request:        c.Request(),
 				Context:        c.Request().Context(),
+				Logger:         brc.Logger(),
 				User:           brc.User,
 				InternalClient: brc.InternalClient,
-				Logger:         brc.Logger(),
+				Headers:        brc.Headers,
 			}
 			param := graphql.Params{
 				Schema:         *schema,

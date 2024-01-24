@@ -13,6 +13,13 @@ var (
 	ServerListenAddress string
 )
 
+func (h *RequestHeaders) Get(key string) string {
+	if h == nil {
+		return ""
+	}
+	return (*h)[key]
+}
+
 func (r *WunderGraphRequest) NewRequest() *http.Request {
 	req, _ := http.NewRequest(r.Method, r.RequestURI, bytes.NewReader(r.OriginBody))
 	for k, v := range r.Headers {
