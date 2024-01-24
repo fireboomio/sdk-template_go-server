@@ -4,131 +4,6 @@ import (
 	"time"
 )
 
-type HealthReport struct {
-	Customizes []string  `json:"customizes"`
-	Functions  []string  `json:"functions"`
-	Proxys     []string  `json:"proxys"`
-	Time       time.Time `json:"time"`
-}
-
-type UploadHookPayload_error struct {
-	Message string `json:"message"`
-	Name    string `json:"name"`
-}
-
-type PostResolveGetTransformation struct {
-	DateTimeFormat string   `json:"dateTimeFormat"`
-	From           []string `json:"from"`
-	To             []string `json:"to"`
-}
-
-type StatusCodeTypeMapping struct {
-	InjectStatusCodeIntoBody bool   `json:"injectStatusCodeIntoBody"`
-	StatusCode               int64  `json:"statusCode"`
-	TypeName                 string `json:"typeName"`
-}
-
-type RESTSubscriptionConfiguration struct {
-	Enabled                 bool  `json:"enabled"`
-	PollingIntervalMillis   int64 `json:"pollingIntervalMillis"`
-	SkipPublishSameResponse bool  `json:"skipPublishSameResponse"`
-}
-
-type DataSourceCustom_REST_Rewriter struct {
-	Rewriters []*DataSourceRESTRewriter `json:"rewriters"`
-}
-
-type ApiAuthenticationHooks struct {
-	MutatingPostAuthentication bool `json:"mutatingPostAuthentication"`
-	PostAuthentication         bool `json:"postAuthentication"`
-	PostLogout                 bool `json:"postLogout"`
-	RevalidateAuthentication   bool `json:"revalidateAuthentication"`
-}
-
-type OpenIDConnectQueryParameter struct {
-	Name  *ConfigurationVariable `json:"name"`
-	Value *ConfigurationVariable `json:"value"`
-}
-
-type GraphQLFederationConfiguration struct {
-	Enabled    bool   `json:"enabled"`
-	ServiceSdl string `json:"serviceSdl"`
-}
-
-type JwksBasedAuthentication struct {
-	Providers []*JwksAuthProvider `json:"providers"`
-}
-
-type XML struct {
-	Attribute bool   `json:"attribute,omitempty"`
-	Name      string `json:"name,omitempty"`
-	Namespace string `json:"namespace,omitempty"`
-	Prefix    string `json:"prefix,omitempty"`
-	Wrapped   bool   `json:"wrapped,omitempty"`
-}
-
-type RequestError struct {
-	Locations []*Location `json:"locations,omitempty"`
-	Message   string      `json:"message"`
-	Path      *ErrorPath  `json:"path"`
-}
-
-type CorsConfiguration struct {
-	AllowCredentials bool                     `json:"allowCredentials"`
-	AllowedHeaders   []string                 `json:"allowedHeaders"`
-	AllowedMethods   []string                 `json:"allowedMethods"`
-	AllowedOrigins   []*ConfigurationVariable `json:"allowedOrigins"`
-	ExposedHeaders   []string                 `json:"exposedHeaders"`
-	MaxAge           int64                    `json:"maxAge"`
-}
-
-type OperationTransaction struct {
-	IsolationLevel int64 `json:"isolationLevel"`
-	MaxWaitSeconds int64 `json:"maxWaitSeconds"`
-	TimeoutSeconds int64 `json:"timeoutSeconds"`
-}
-
-type User_customClaims map[string]any
-
-type URLQueryConfiguration struct {
-	Name  string `json:"name"`
-	Value string `json:"value"`
-}
-
-type DataSourceConfiguration_customRestRequestRewriterMap map[string]*DataSourceCustom_REST_Rewriter
-
-type NodeLogging struct {
-	Level *ConfigurationVariable `json:"level"`
-}
-
-type DataSourceCustom_REST struct {
-	DefaultTypeName        string                         `json:"defaultTypeName"`
-	Fetch                  *FetchConfiguration            `json:"fetch"`
-	RequestRewriters       []*DataSourceRESTRewriter      `json:"requestRewriters,omitempty"`
-	ResponseRewriters      []*DataSourceRESTRewriter      `json:"responseRewriters,omitempty"`
-	StatusCodeTypeMappings []*StatusCodeTypeMapping       `json:"statusCodeTypeMappings"`
-	Subscription           *RESTSubscriptionConfiguration `json:"subscription"`
-}
-
-type FieldConfiguration struct {
-	ArgumentsConfiguration     []*ArgumentConfiguration `json:"argumentsConfiguration"`
-	DisableDefaultFieldMapping bool                     `json:"disableDefaultFieldMapping"`
-	FieldName                  string                   `json:"fieldName"`
-	Path                       []string                 `json:"path"`
-	RequiresFields             []string                 `json:"requiresFields"`
-	TypeName                   string                   `json:"typeName"`
-	UnescapeResponseJson       bool                     `json:"unescapeResponseJson"`
-}
-
-type CustomClaim struct {
-	JsonPathComponents []string  `json:"jsonPathComponents"`
-	Name               string    `json:"name"`
-	Required           bool      `json:"required"`
-	Type               ValueType `json:"type"`
-}
-
-type OperationsConfig_graphql_operation_files map[string]*GraphqlOperationFile
-
 type WunderGraphResponse struct {
 	Body       any            `json:"body,omitempty"`
 	Headers    RequestHeaders `json:"headers"`
@@ -139,172 +14,10 @@ type WunderGraphResponse struct {
 	StatusCode int64          `json:"statusCode"`
 }
 
-type UploadHookPayload struct {
-	Wg    *BaseRequestBodyWg      `json:"__wg"`
-	Error UploadHookPayload_error `json:"error"`
-	File  *HookFile               `json:"file"`
-	Meta  any                     `json:"meta"`
-}
-
-type FetchConfiguration struct {
-	BaseUrl                *ConfigurationVariable    `json:"baseUrl"`
-	Body                   *ConfigurationVariable    `json:"body"`
-	Header                 FetchConfiguration_header `json:"header"`
-	MTLS                   *MTLSConfiguration        `json:"mTLS"`
-	Method                 HTTPMethod                `json:"method"`
-	Path                   *ConfigurationVariable    `json:"path"`
-	Query                  []*URLQueryConfiguration  `json:"query"`
-	RequestContentType     string                    `json:"requestContentType"`
-	ResponseContentType    string                    `json:"responseContentType"`
-	UpstreamAuthentication *UpstreamAuthentication   `json:"upstreamAuthentication"`
-	Url                    *ConfigurationVariable    `json:"url"`
-	UrlEncodeBody          bool                      `json:"urlEncodeBody"`
-}
-
-type WebhookVerifier struct {
-	Kind                  WebhookVerifierKind    `json:"kind"`
-	Secret                *ConfigurationVariable `json:"secret"`
-	SignatureHeader       string                 `json:"signatureHeader"`
-	SignatureHeaderPrefix string                 `json:"signatureHeaderPrefix"`
-}
-
-type ErrorPath struct {
-}
-
-type OperationAuthenticationConfig struct {
-	AuthRequired bool `json:"authRequired"`
-}
-
-type OpenIDConnectAuthProviderConfig struct {
-	ClientId        *ConfigurationVariable         `json:"clientId"`
-	ClientSecret    *ConfigurationVariable         `json:"clientSecret"`
-	Issuer          *ConfigurationVariable         `json:"issuer"`
-	QueryParameters []*OpenIDConnectQueryParameter `json:"queryParameters"`
-}
-
-type S3UploadProfileHooksConfiguration struct {
-	PostUpload bool `json:"postUpload"`
-	PreUpload  bool `json:"preUpload"`
-}
-
-type CookieBasedAuthentication struct {
-	AuthorizedRedirectUriRegexes []*ConfigurationVariable `json:"authorizedRedirectUriRegexes"`
-	AuthorizedRedirectUris       []*ConfigurationVariable `json:"authorizedRedirectUris"`
-	BlockKey                     *ConfigurationVariable   `json:"blockKey"`
-	CsrfSecret                   *ConfigurationVariable   `json:"csrfSecret"`
-	HashKey                      *ConfigurationVariable   `json:"hashKey"`
-	Providers                    []*AuthProvider          `json:"providers"`
-}
-
-type OperationMultipartForm struct {
-	FieldName string `json:"fieldName"`
-	IsArray   bool   `json:"isArray"`
-}
-
-type VariableWhereInput struct {
-	Filter *VariableWhereInputFilter `json:"filter"`
-	Not    *VariableWhereInput       `json:"not"`
-}
-
-type OperationRoleConfig struct {
-	DenyMatchAll    []string `json:"denyMatchAll"`
-	DenyMatchAny    []string `json:"denyMatchAny"`
-	RequireMatchAll []string `json:"requireMatchAll"`
-	RequireMatchAny []string `json:"requireMatchAny"`
-}
-
-type OperationsConfig struct {
-	Definitions              Schemas                                   `json:"definitions"`
-	Function_operation_files OperationsConfig_function_operation_files `json:"function_operation_files"`
-	Graphql_operation_files  OperationsConfig_graphql_operation_files  `json:"graphql_operation_files"`
-	Invalids                 []string                                  `json:"invalids,omitempty"`
-	Proxy_operation_files    OperationsConfig_proxy_operation_files    `json:"proxy_operation_files"`
-}
-
-type SchemaRefs []*SchemaRef
-
-type BaseRequestBody struct {
-	Wg *BaseRequestBodyWg `json:"__wg"`
-}
-
-type OnWsConnectionInitHookPayload struct {
-	DataSourceId string              `json:"dataSourceId"`
-	Request      *WunderGraphRequest `json:"request"`
-}
-
-type OperationHookPayload_response struct {
-	Data   any             `json:"data"`
-	Errors []*RequestError `json:"errors"`
-}
-
-type DataSourceCustom_GraphQL struct {
-	CustomScalarTypeFields []*SingleTypeField                   `json:"customScalarTypeFields"`
-	Federation             *GraphQLFederationConfiguration      `json:"federation"`
-	Fetch                  *FetchConfiguration                  `json:"fetch"`
-	HooksConfiguration     *GraphQLDataSourceHooksConfiguration `json:"hooksConfiguration"`
-	Subscription           *GraphQLSubscriptionConfiguration    `json:"subscription"`
-	UpstreamSchema         string                               `json:"upstreamSchema"`
-}
-
-type WebhookConfiguration struct {
-	FilePath string           `json:"filePath"`
-	Name     string           `json:"name"`
-	Verifier *WebhookVerifier `json:"verifier"`
-}
-
-type MutatingPostAuthenticationResponse struct {
-	Message string `json:"message"`
-	Status  string `json:"status"`
-	User    *User  `json:"user"`
-}
-
-type DataSourceCustom_Database struct {
-	CloseTimeoutSeconds int64                  `json:"closeTimeoutSeconds"`
-	DatabaseURL         *ConfigurationVariable `json:"databaseURL"`
-	GraphqlSchema       string                 `json:"graphqlSchema"`
-	JsonInputVariables  []string               `json:"jsonInputVariables"`
-	JsonTypeFields      []*SingleTypeField     `json:"jsonTypeFields"`
-	PrismaSchema        string                 `json:"prismaSchema"`
-}
-
-type GraphQLSubscriptionConfiguration struct {
-	Enabled bool                   `json:"enabled"`
-	Url     *ConfigurationVariable `json:"url"`
-	UseSSE  bool                   `json:"useSSE"`
-}
-
-type OnWsConnectionInitHookResponse struct {
-	Payload any `json:"payload"`
-}
-
-type ConfigurationVariable struct {
-	EnvironmentVariableDefaultValue string                    `json:"environmentVariableDefaultValue,omitempty"`
-	EnvironmentVariableName         string                    `json:"environmentVariableName,omitempty"`
-	Kind                            ConfigurationVariableKind `json:"kind"`
-	PlaceholderVariableName         string                    `json:"placeholderVariableName,omitempty"`
-	StaticVariableContent           string                    `json:"staticVariableContent,omitempty"`
-}
-
-type OperationLiveQueryConfig struct {
-	Enabled                bool  `json:"enabled"`
-	PollingIntervalSeconds int64 `json:"pollingIntervalSeconds"`
-}
-
-type ExtensionOperationFile struct {
-	Authorization_config *OperationAuthorizationConfig `json:"authorization_config"`
-	File_path            string                        `json:"file_path"`
-	Internal_variables   *SchemaRef                    `json:"internal_variables,omitempty"`
-	Module_path          string                        `json:"module_path"`
-	Operation_name       string                        `json:"operation_name"`
-	Operation_type       OperationType                 `json:"operation_type"`
-	Response             *SchemaRef                    `json:"response"`
-	Variables            *SchemaRef                    `json:"variables"`
-	Variables_refs       []string                      `json:"variables_refs"`
-}
-
-type Discriminator struct {
-	Mapping      Discriminator_mapping `json:"mapping,omitempty"`
-	PropertyName string                `json:"propertyName"`
+type UpstreamAuthentication struct {
+	JwtConfig                        *JwtUpstreamAuthenticationConfig                  `json:"jwtConfig"`
+	JwtWithAccessTokenExchangeConfig *JwtUpstreamAuthenticationWithAccessTokenExchange `json:"jwtWithAccessTokenExchangeConfig"`
+	Kind                             UpstreamAuthenticationKind                        `json:"kind"`
 }
 
 type S3UploadConfiguration struct {
@@ -318,172 +31,9 @@ type S3UploadConfiguration struct {
 	UseSSL          bool                                 `json:"useSSL"`
 }
 
-type DataSourceRESTRewriter_valueRewrites map[string]string
-
-type VariableInjectionConfiguration struct {
-	DateFormat              string             `json:"dateFormat"`
-	DateOffset              *DateOffset        `json:"dateOffset"`
-	EnvironmentVariableName string             `json:"environmentVariableName"`
-	FromHeaderName          string             `json:"fromHeaderName"`
-	VariableKind            InjectVariableKind `json:"variableKind"`
-	VariablePathComponents  []string           `json:"variablePathComponents"`
-}
-
-type VariableWhereInputScalarFilter struct {
-	Insensitive bool                               `json:"insensitive"`
-	Type        VariableWhereInputScalarFilterType `json:"type"`
-}
-
-type OnRequestHookResponse struct {
-	Cancel  bool                `json:"cancel"`
-	Request *WunderGraphRequest `json:"request"`
-	Skip    bool                `json:"skip"`
-}
-
-type EngineConfiguration struct {
-	DatasourceConfigurations []*DataSourceConfiguration `json:"datasourceConfigurations"`
-	DefaultFlushInterval     int64                      `json:"defaultFlushInterval"`
-	FieldConfigurations      []*FieldConfiguration      `json:"fieldConfigurations"`
-	GraphqlSchema            string                     `json:"graphqlSchema"`
-	TypeConfigurations       []*TypeConfiguration       `json:"typeConfigurations"`
-}
-
-type VariableWhereInputFilter struct {
-	Field    string                            `json:"field"`
-	Relation *VariableWhereInputRelationFilter `json:"relation"`
-	Scalar   *VariableWhereInputScalarFilter   `json:"scalar"`
-}
-
-type RequestHeaders map[string]string
-
-type Operation_datasourceQuotes map[string]*DatasourceQuote
-
-type ClaimConfig struct {
-	ClaimType              ClaimType               `json:"claimType"`
-	Custom                 *CustomClaim            `json:"custom"`
-	RemoveIfNoneMatch      *ClaimRemoveIfNoneMatch `json:"removeIfNoneMatch"`
-	VariablePathComponents []string                `json:"variablePathComponents"`
-}
-
-type ServerLogging struct {
-	Level *ConfigurationVariable `json:"level"`
-}
-
-type DataSourceRESTSubObject struct {
-	Fields []*DataSourceRESTSubfield `json:"fields"`
-	Name   string                    `json:"name"`
-}
-
-type UploadHookResponse struct {
-	Error   string `json:"error"`
-	FileKey string `json:"fileKey"`
-}
-
-type SchemaRef struct {
-	Ref   string  `json:"Ref"`
-	Value *Schema `json:"Value"`
-}
-
-type ExternalDocs struct {
-	Description string `json:"description,omitempty"`
-	Url         string `json:"url,omitempty"`
-}
-
-type OnResponseHookPayload struct {
-	OperationName string               `json:"operationName"`
-	OperationType string               `json:"operationType"`
-	Response      *WunderGraphResponse `json:"response"`
-}
-
-type OperationVariablesConfiguration struct {
-	InjectVariables []*VariableInjectionConfiguration  `json:"injectVariables"`
-	WhereInputs     []*VariableWhereInputConfiguration `json:"whereInputs"`
-}
-
-type Schema struct {
-	AdditionalProperties *AdditionalProperties `json:"additionalProperties,omitempty"`
-	AllOf                SchemaRefs            `json:"allOf,omitempty"`
-	AllowEmptyValue      bool                  `json:"allowEmptyValue,omitempty"`
-	AnyOf                SchemaRefs            `json:"anyOf,omitempty"`
-	Default              any                   `json:"default,omitempty"`
-	Deprecated           bool                  `json:"deprecated,omitempty"`
-	Description          string                `json:"description,omitempty"`
-	Discriminator        *Discriminator        `json:"discriminator,omitempty"`
-	Enum                 []any                 `json:"enum,omitempty"`
-	Example              any                   `json:"example,omitempty"`
-	ExclusiveMaximum     bool                  `json:"exclusiveMaximum,omitempty"`
-	ExclusiveMinimum     bool                  `json:"exclusiveMinimum,omitempty"`
-	ExternalDocs         *ExternalDocs         `json:"externalDocs,omitempty"`
-	Format               string                `json:"format,omitempty"`
-	Items                *SchemaRef            `json:"items,omitempty"`
-	MaxItems             int64                 `json:"maxItems,omitempty"`
-	MaxLength            int64                 `json:"maxLength,omitempty"`
-	MaxProperties        int64                 `json:"maxProperties,omitempty"`
-	Maximum              float64               `json:"maximum,omitempty"`
-	MinItems             int64                 `json:"minItems,omitempty"`
-	MinLength            int64                 `json:"minLength,omitempty"`
-	MinProperties        int64                 `json:"minProperties,omitempty"`
-	Minimum              float64               `json:"minimum,omitempty"`
-	MultipleOf           float64               `json:"multipleOf,omitempty"`
-	Not                  *SchemaRef            `json:"not,omitempty"`
-	Nullable             bool                  `json:"nullable,omitempty"`
-	OneOf                SchemaRefs            `json:"oneOf,omitempty"`
-	Pattern              string                `json:"pattern,omitempty"`
-	Properties           Schemas               `json:"properties,omitempty"`
-	ReadOnly             bool                  `json:"readOnly,omitempty"`
-	Required             []string              `json:"required,omitempty"`
-	Title                string                `json:"title,omitempty"`
-	Type                 string                `json:"type,omitempty"`
-	UniqueItems          bool                  `json:"uniqueItems,omitempty"`
-	WriteOnly            bool                  `json:"writeOnly,omitempty"`
-	Xml                  *XML                  `json:"xml,omitempty"`
-}
-
-type CustomizeHookPayload struct {
-	Wg            *BaseRequestBodyWg             `json:"__wg"`
-	OperationName string                         `json:"operationName"`
-	Query         string                         `json:"query"`
-	Variables     CustomizeHookPayload_variables `json:"variables"`
-}
-
-type AdditionalProperties struct {
-	Has    bool       `json:"Has"`
-	Schema *SchemaRef `json:"Schema"`
-}
-
-type BaseRequestBodyWg struct {
-	ClientRequest *WunderGraphRequest `json:"clientRequest"`
-	User          *User               `json:"user"`
-}
-
-type OperationHooksConfiguration struct {
-	CustomResolve              bool                          `json:"customResolve"`
-	HttpTransportAfterResponse bool                          `json:"httpTransportAfterResponse"`
-	HttpTransportBeforeRequest bool                          `json:"httpTransportBeforeRequest"`
-	HttpTransportOnRequest     bool                          `json:"httpTransportOnRequest"`
-	HttpTransportOnResponse    bool                          `json:"httpTransportOnResponse"`
-	MockResolve                *MockResolveHookConfiguration `json:"mockResolve"`
-	MutatingPostResolve        bool                          `json:"mutatingPostResolve"`
-	MutatingPreResolve         bool                          `json:"mutatingPreResolve"`
-	OnConnectionInit           bool                          `json:"onConnectionInit"`
-	PostResolve                bool                          `json:"postResolve"`
-	PreResolve                 bool                          `json:"preResolve"`
-}
-
-type VariableWhereInputRelationFilter struct {
-	Type  VariableWhereInputRelationFilterType `json:"type"`
-	Where *VariableWhereInput                  `json:"where"`
-}
-
-type VariableWhereInputConfiguration struct {
-	VariablePathComponents []string            `json:"variablePathComponents"`
-	WhereInput             *VariableWhereInput `json:"whereInput"`
-}
-
-type DateOffset struct {
-	Previous bool           `json:"previous"`
-	Unit     DateOffsetUnit `json:"unit"`
-	Value    int64          `json:"value"`
+type OpenIDConnectQueryParameter struct {
+	Name  *ConfigurationVariable `json:"name"`
+	Value *ConfigurationVariable `json:"value"`
 }
 
 type DataSourceConfiguration struct {
@@ -503,7 +53,288 @@ type DataSourceConfiguration struct {
 	RootNodes                     []*TypeField                                          `json:"rootNodes"`
 }
 
-type OperationsConfig_proxy_operation_files map[string]*ExtensionOperationFile
+type URLQueryConfiguration struct {
+	Name  string `json:"name"`
+	Value string `json:"value"`
+}
+
+type DataSourceCustom_GraphQL struct {
+	CustomScalarTypeFields []*SingleTypeField                   `json:"customScalarTypeFields"`
+	Federation             *GraphQLFederationConfiguration      `json:"federation"`
+	Fetch                  *FetchConfiguration                  `json:"fetch"`
+	HooksConfiguration     *GraphQLDataSourceHooksConfiguration `json:"hooksConfiguration"`
+	Subscription           *GraphQLSubscriptionConfiguration    `json:"subscription"`
+	UpstreamSchema         string                               `json:"upstreamSchema"`
+}
+
+type JwtUpstreamAuthenticationConfig struct {
+	Secret        *ConfigurationVariable `json:"secret"`
+	SigningMethod int64                  `json:"signingMethod"`
+}
+
+type DataSourceConfiguration_customRestMap map[string]*DataSourceCustom_REST
+
+type ListenerOptions struct {
+	Host *ConfigurationVariable `json:"host"`
+	Port *ConfigurationVariable `json:"port"`
+}
+
+type OperationVariablesConfiguration struct {
+	InjectVariables []*VariableInjectionConfiguration  `json:"injectVariables"`
+	WhereInputs     []*VariableWhereInputConfiguration `json:"whereInputs"`
+}
+
+type StatusCodeTypeMapping struct {
+	InjectStatusCodeIntoBody bool   `json:"injectStatusCodeIntoBody"`
+	StatusCode               int64  `json:"statusCode"`
+	TypeName                 string `json:"typeName"`
+}
+
+type OnRequestHookResponse struct {
+	Cancel  bool                `json:"cancel"`
+	Request *WunderGraphRequest `json:"request"`
+	Skip    bool                `json:"skip"`
+}
+
+type OnWsConnectionInitHookResponse struct {
+	Payload any `json:"payload"`
+}
+
+type GraphQLSubscriptionConfiguration struct {
+	Enabled bool                   `json:"enabled"`
+	Url     *ConfigurationVariable `json:"url"`
+	UseSSE  bool                   `json:"useSSE"`
+}
+
+type DirectiveConfiguration struct {
+	DirectiveName string `json:"directiveName"`
+	RenameTo      string `json:"renameTo"`
+}
+
+type GQLError struct {
+	Error string         `json:"error"`
+	Path  []string       `json:"path"`
+	Query GQLError_query `json:"query"`
+}
+
+type OperationHooksConfiguration struct {
+	CustomResolve              bool                          `json:"customResolve"`
+	HttpTransportAfterResponse bool                          `json:"httpTransportAfterResponse"`
+	HttpTransportBeforeRequest bool                          `json:"httpTransportBeforeRequest"`
+	HttpTransportOnRequest     bool                          `json:"httpTransportOnRequest"`
+	HttpTransportOnResponse    bool                          `json:"httpTransportOnResponse"`
+	MockResolve                *MockResolveHookConfiguration `json:"mockResolve"`
+	MutatingPostResolve        bool                          `json:"mutatingPostResolve"`
+	MutatingPreResolve         bool                          `json:"mutatingPreResolve"`
+	OnConnectionInit           bool                          `json:"onConnectionInit"`
+	PostResolve                bool                          `json:"postResolve"`
+	PreResolve                 bool                          `json:"preResolve"`
+}
+
+type GraphQLFederationConfiguration struct {
+	Enabled    bool   `json:"enabled"`
+	ServiceSdl string `json:"serviceSdl"`
+}
+
+type NodeOptions struct {
+	DefaultRequestTimeoutSeconds int64                  `json:"defaultRequestTimeoutSeconds"`
+	Listen                       *ListenerOptions       `json:"listen"`
+	Logger                       *NodeLogging           `json:"logger"`
+	NodeUrl                      *ConfigurationVariable `json:"nodeUrl"`
+	PublicNodeUrl                *ConfigurationVariable `json:"publicNodeUrl"`
+}
+
+type HealthReport struct {
+	Customizes []string  `json:"customizes"`
+	Functions  []string  `json:"functions"`
+	Proxys     []string  `json:"proxys"`
+	Time       time.Time `json:"time"`
+}
+
+type AuthProvider struct {
+	GithubConfig *GithubAuthProviderConfig        `json:"githubConfig"`
+	Id           string                           `json:"id"`
+	Kind         AuthProviderKind                 `json:"kind"`
+	OidcConfig   *OpenIDConnectAuthProviderConfig `json:"oidcConfig"`
+}
+
+type ServerOptions struct {
+	Listen    *ListenerOptions       `json:"listen"`
+	Logger    *ServerLogging         `json:"logger"`
+	ServerUrl *ConfigurationVariable `json:"serverUrl"`
+}
+
+type MiddlewareHookResponse struct {
+	Error                   string         `json:"error,omitempty"`
+	Hook                    string         `json:"hook"`
+	Input                   any            `json:"input"`
+	Op                      string         `json:"op"`
+	Response                any            `json:"response"`
+	SetClientRequestHeaders RequestHeaders `json:"setClientRequestHeaders"`
+}
+
+type GQLError_query map[string]any
+
+type VariableWhereInputFilter struct {
+	Field    string                            `json:"field"`
+	Relation *VariableWhereInputRelationFilter `json:"relation"`
+	Scalar   *VariableWhereInputScalarFilter   `json:"scalar"`
+}
+
+type GraphQLDataSourceHooksConfiguration struct {
+	OnWSTransportConnectionInit bool `json:"onWSTransportConnectionInit"`
+}
+
+type DataSourceCustom_REST struct {
+	DefaultTypeName        string                         `json:"defaultTypeName"`
+	Fetch                  *FetchConfiguration            `json:"fetch"`
+	RequestRewriters       []*DataSourceRESTRewriter      `json:"requestRewriters,omitempty"`
+	ResponseRewriters      []*DataSourceRESTRewriter      `json:"responseRewriters,omitempty"`
+	StatusCodeTypeMappings []*StatusCodeTypeMapping       `json:"statusCodeTypeMappings"`
+	Subscription           *RESTSubscriptionConfiguration `json:"subscription"`
+}
+
+type VariableWhereInputScalarFilter struct {
+	Insensitive bool                               `json:"insensitive"`
+	Type        VariableWhereInputScalarFilterType `json:"type"`
+}
+
+type DataSourceRESTSubObject struct {
+	Fields []*DataSourceRESTSubfield `json:"fields"`
+	Name   string                    `json:"name"`
+}
+
+type RESTSubscriptionConfiguration struct {
+	Enabled                 bool  `json:"enabled"`
+	PollingIntervalMillis   int64 `json:"pollingIntervalMillis"`
+	SkipPublishSameResponse bool  `json:"skipPublishSameResponse"`
+}
+
+type OperationAuthenticationConfig struct {
+	AuthRequired bool `json:"authRequired"`
+}
+
+type OperationCacheConfig struct {
+	Enabled              bool  `json:"enabled"`
+	MaxAge               int64 `json:"maxAge"`
+	Public               bool  `json:"public"`
+	StaleWhileRevalidate int64 `json:"staleWhileRevalidate"`
+}
+
+type BaseRequestBodyWg struct {
+	ClientRequest *WunderGraphRequest `json:"clientRequest"`
+	User          *User               `json:"user"`
+}
+
+type HookFile struct {
+	Name     string `json:"name"`
+	Provider string `json:"provider"`
+	Size     int64  `json:"size"`
+	Type     string `json:"type"`
+}
+
+type OpenIDConnectAuthProviderConfig struct {
+	ClientId        *ConfigurationVariable         `json:"clientId"`
+	ClientSecret    *ConfigurationVariable         `json:"clientSecret"`
+	Issuer          *ConfigurationVariable         `json:"issuer"`
+	QueryParameters []*OpenIDConnectQueryParameter `json:"queryParameters"`
+}
+
+type JwksAuthProvider struct {
+	JwksJson                *ConfigurationVariable `json:"jwksJson"`
+	JwksUrl                 *ConfigurationVariable `json:"jwksUrl"`
+	UserInfoCacheTtlSeconds int64                  `json:"userInfoCacheTtlSeconds"`
+	UserInfoEndpoint        *ConfigurationVariable `json:"userInfoEndpoint"`
+}
+
+type MockResolveHookConfiguration struct {
+	Enabled                           bool  `json:"enabled"`
+	SubscriptionPollingIntervalMillis int64 `json:"subscriptionPollingIntervalMillis"`
+}
+
+type JwtUpstreamAuthenticationWithAccessTokenExchange struct {
+	AccessTokenExchangeEndpoint *ConfigurationVariable `json:"accessTokenExchangeEndpoint"`
+	Secret                      *ConfigurationVariable `json:"secret"`
+	SigningMethod               SigningMethod          `json:"signingMethod"`
+}
+
+type DataSourceCustom_Database struct {
+	CloseTimeoutSeconds int64                  `json:"closeTimeoutSeconds"`
+	DatabaseURL         *ConfigurationVariable `json:"databaseURL"`
+	GraphqlSchema       string                 `json:"graphqlSchema"`
+	JsonInputVariables  []string               `json:"jsonInputVariables"`
+	JsonTypeFields      []*SingleTypeField     `json:"jsonTypeFields"`
+	PrismaSchema        string                 `json:"prismaSchema"`
+}
+
+type UploadHookPayload struct {
+	Wg    *BaseRequestBodyWg      `json:"__wg"`
+	Error UploadHookPayload_error `json:"error"`
+	File  *HookFile               `json:"file"`
+	Meta  any                     `json:"meta"`
+}
+
+type DatasourceQuote struct {
+	Fields []string `json:"fields"`
+}
+
+type VariableWhereInput struct {
+	Filter *VariableWhereInputFilter `json:"filter"`
+	Not    *VariableWhereInput       `json:"not"`
+}
+
+type DataSourceRESTRewriter struct {
+	ApplySubCommonField       string                                           `json:"applySubCommonField,omitempty"`
+	ApplySubCommonFieldValues DataSourceRESTRewriter_applySubCommonFieldValues `json:"applySubCommonFieldValues,omitempty"`
+	ApplySubFieldTypes        []*DataSourceRESTSubfield                        `json:"applySubFieldTypes,omitempty"`
+	ApplySubObjects           []*DataSourceRESTSubObject                       `json:"applySubObjects,omitempty"`
+	CustomEnumField           string                                           `json:"customEnumField,omitempty"`
+	CustomObjectName          string                                           `json:"customObjectName,omitempty"`
+	FieldRewriteTo            string                                           `json:"fieldRewriteTo,omitempty"`
+	PathComponents            []string                                         `json:"pathComponents"`
+	QuoteObjectName           string                                           `json:"quoteObjectName,omitempty"`
+	Type                      int64                                            `json:"type"`
+	ValueRewrites             DataSourceRESTRewriter_valueRewrites             `json:"valueRewrites,omitempty"`
+}
+
+type RequestHeaders map[string]string
+
+type OnResponseHookPayload struct {
+	Wg            *BaseRequestBodyWg   `json:"__wg"`
+	OperationName string               `json:"operationName"`
+	OperationType string               `json:"operationType"`
+	Response      *WunderGraphResponse `json:"response"`
+}
+
+type DataSourceRESTSubfield struct {
+	Name string `json:"name"`
+	Type int64  `json:"type"`
+}
+
+type OperationRateLimit struct {
+	Enabled   bool  `json:"enabled"`
+	PerSecond int64 `json:"perSecond"`
+	Requests  int64 `json:"requests"`
+}
+
+type FetchConfiguration struct {
+	BaseUrl                *ConfigurationVariable    `json:"baseUrl"`
+	Body                   *ConfigurationVariable    `json:"body"`
+	Header                 FetchConfiguration_header `json:"header"`
+	MTLS                   *MTLSConfiguration        `json:"mTLS"`
+	Method                 HTTPMethod                `json:"method"`
+	Path                   *ConfigurationVariable    `json:"path"`
+	Query                  []*URLQueryConfiguration  `json:"query"`
+	RequestContentType     string                    `json:"requestContentType"`
+	ResponseContentType    string                    `json:"responseContentType"`
+	UpstreamAuthentication *UpstreamAuthentication   `json:"upstreamAuthentication"`
+	Url                    *ConfigurationVariable    `json:"url"`
+	UrlEncodeBody          bool                      `json:"urlEncodeBody"`
+}
+
+type GqlResponseResult_extensions map[string]any
+
+type Operation_datasourceQuotes map[string]*DatasourceQuote
 
 type UserDefinedApi struct {
 	AllowedHostNames      []*ConfigurationVariable `json:"allowedHostNames"`
@@ -519,63 +350,44 @@ type UserDefinedApi struct {
 	Webhooks              []*WebhookConfiguration  `json:"webhooks"`
 }
 
+type S3UploadProfileHooksConfiguration struct {
+	PostUpload bool `json:"postUpload"`
+	PreUpload  bool `json:"preUpload"`
+}
+
+type S3UploadProfile struct {
+	AllowedFileExtensions     []string                           `json:"allowedFileExtensions"`
+	AllowedMimeTypes          []string                           `json:"allowedMimeTypes"`
+	Hooks                     *S3UploadProfileHooksConfiguration `json:"hooks"`
+	MaxAllowedFiles           int64                              `json:"maxAllowedFiles"`
+	MaxAllowedUploadSizeBytes int64                              `json:"maxAllowedUploadSizeBytes"`
+	MetadataJSONSchema        string                             `json:"metadataJSONSchema"`
+	RequireAuthentication     bool                               `json:"requireAuthentication"`
+}
+
+type OperationRoleConfig struct {
+	DenyMatchAll    []string `json:"denyMatchAll"`
+	DenyMatchAny    []string `json:"denyMatchAny"`
+	RequireMatchAll []string `json:"requireMatchAll"`
+	RequireMatchAny []string `json:"requireMatchAny"`
+}
+
+type TypeField_quotes map[string]*QuoteField
+
+type ApiAuthenticationHooks struct {
+	MutatingPostAuthentication bool `json:"mutatingPostAuthentication"`
+	PostAuthentication         bool `json:"postAuthentication"`
+	PostLogout                 bool `json:"postLogout"`
+	RevalidateAuthentication   bool `json:"revalidateAuthentication"`
+}
+
 type FetchConfiguration_header map[string]*HTTPHeader
 
-type Discriminator_mapping map[string]string
-
-type DataSourceRESTRewriter_applySubCommonFieldValues map[string]string
-
-type GraphqlOperationFile struct {
-	Authorization_config *OperationAuthorizationConfig `json:"authorization_config"`
-	File_path            string                        `json:"file_path"`
-	Internal             bool                          `json:"internal"`
-	Internal_variables   *SchemaRef                    `json:"internal_variables,omitempty"`
-	Operation_name       string                        `json:"operation_name"`
-	Operation_type       OperationType                 `json:"operation_type"`
-	Response             *SchemaRef                    `json:"response"`
-	Variables            *SchemaRef                    `json:"variables"`
-	Variables_refs       []string                      `json:"variables_refs"`
-}
-
-type OnRequestHookPayload struct {
-	ArgsAllowList []string            `json:"argsAllowList"`
-	OperationName string              `json:"operationName"`
-	OperationType OperationTypeString `json:"operationType"`
-	Request       *WunderGraphRequest `json:"request"`
-}
-
-type WunderGraphConfiguration struct {
-	Api                              *UserDefinedApi `json:"api"`
-	ApiId                            string          `json:"apiId"`
-	ApiName                          string          `json:"apiName"`
-	DangerouslyEnableGraphQLEndpoint bool            `json:"dangerouslyEnableGraphQLEndpoint"`
-	DeploymentName                   string          `json:"deploymentName"`
-	EnvironmentIds                   []string        `json:"environmentIds"`
-}
-
-type JwtUpstreamAuthenticationWithAccessTokenExchange struct {
-	AccessTokenExchangeEndpoint *ConfigurationVariable `json:"accessTokenExchangeEndpoint"`
-	Secret                      *ConfigurationVariable `json:"secret"`
-	SigningMethod               SigningMethod          `json:"signingMethod"`
-}
-
-type AuthProvider struct {
-	GithubConfig *GithubAuthProviderConfig        `json:"githubConfig"`
-	Id           string                           `json:"id"`
-	Kind         AuthProviderKind                 `json:"kind"`
-	OidcConfig   *OpenIDConnectAuthProviderConfig `json:"oidcConfig"`
-}
-
-type GraphQLDataSourceHooksConfiguration struct {
-	OnWSTransportConnectionInit bool `json:"onWSTransportConnectionInit"`
-}
-
-type NodeOptions struct {
-	DefaultRequestTimeoutSeconds int64                  `json:"defaultRequestTimeoutSeconds"`
-	Listen                       *ListenerOptions       `json:"listen"`
-	Logger                       *NodeLogging           `json:"logger"`
-	NodeUrl                      *ConfigurationVariable `json:"nodeUrl"`
-	PublicNodeUrl                *ConfigurationVariable `json:"publicNodeUrl"`
+type CustomizeHookPayload struct {
+	Wg            *BaseRequestBodyWg             `json:"__wg"`
+	OperationName string                         `json:"operationName"`
+	Query         string                         `json:"query"`
+	Variables     CustomizeHookPayload_variables `json:"variables"`
 }
 
 type Location struct {
@@ -583,96 +395,121 @@ type Location struct {
 	Line   int64 `json:"line"`
 }
 
-type MockResolveHookConfiguration struct {
-	Enabled                           bool  `json:"enabled"`
-	SubscriptionPollingIntervalMillis int64 `json:"subscriptionPollingIntervalMillis"`
+type GithubAuthProviderConfig struct {
+	ClientId     *ConfigurationVariable `json:"clientId"`
+	ClientSecret *ConfigurationVariable `json:"clientSecret"`
 }
 
-type DataSourceConfiguration_customRestMap map[string]*DataSourceCustom_REST
+type NodeLogging struct {
+	Level *ConfigurationVariable `json:"level"`
+}
+
+type MTLSConfiguration struct {
+	Cert               *ConfigurationVariable `json:"cert"`
+	InsecureSkipVerify bool                   `json:"insecureSkipVerify"`
+	Key                *ConfigurationVariable `json:"key"`
+}
+
+type OperationHookPayload struct {
+	Wg                      *BaseRequestBodyWg            `json:"__wg"`
+	Hook                    MiddlewareHook                `json:"hook"`
+	Input                   any                           `json:"input"`
+	Op                      string                        `json:"op"`
+	Response                OperationHookPayload_response `json:"response"`
+	SetClientRequestHeaders RequestHeaders                `json:"setClientRequestHeaders"`
+}
+
+type DataSourceCustom_REST_Rewriter struct {
+	Rewriters []*DataSourceRESTRewriter `json:"rewriters"`
+}
+
+type MutatingPostAuthenticationResponse struct {
+	Message string `json:"message"`
+	Status  string `json:"status"`
+	User    *User  `json:"user"`
+}
+
+type ErrorPath struct {
+}
+
+type HTTPHeader struct {
+	Values []*ConfigurationVariable `json:"values"`
+}
 
 type S3UploadConfiguration_uploadProfiles map[string]*S3UploadProfile
 
-type OperationAuthorizationConfig struct {
-	Claims     []*ClaimConfig       `json:"claims"`
-	RoleConfig *OperationRoleConfig `json:"roleConfig"`
+type GqlResponseResult struct {
+	Data       any                          `json:"data"`
+	Errors     []*GQLError                  `json:"errors"`
+	Extensions GqlResponseResult_extensions `json:"extensions"`
 }
 
-type JwksAuthProvider struct {
-	JwksJson                *ConfigurationVariable `json:"jwksJson"`
-	JwksUrl                 *ConfigurationVariable `json:"jwksUrl"`
-	UserInfoCacheTtlSeconds int64                  `json:"userInfoCacheTtlSeconds"`
-	UserInfoEndpoint        *ConfigurationVariable `json:"userInfoEndpoint"`
+type OperationHookPayload_response struct {
+	Data   any             `json:"data"`
+	Errors []*RequestError `json:"errors"`
 }
 
-type TypeConfiguration struct {
-	RenameTo string `json:"renameTo"`
-	TypeName string `json:"typeName"`
+type Operation struct {
+	AuthenticationConfig         *OperationAuthenticationConfig   `json:"authenticationConfig"`
+	AuthorizationConfig          *OperationAuthorizationConfig    `json:"authorizationConfig"`
+	CacheConfig                  *OperationCacheConfig            `json:"cacheConfig"`
+	Content                      string                           `json:"content"`
+	DatasourceQuotes             Operation_datasourceQuotes       `json:"datasourceQuotes"`
+	Engine                       OperationExecutionEngine         `json:"engine"`
+	HooksConfiguration           *OperationHooksConfiguration     `json:"hooksConfiguration"`
+	InjectedVariablesSchema      string                           `json:"injectedVariablesSchema,omitempty"`
+	Internal                     bool                             `json:"internal"`
+	InternalVariablesSchema      string                           `json:"internalVariablesSchema,omitempty"`
+	InterpolationVariablesSchema string                           `json:"interpolationVariablesSchema,omitempty"`
+	LiveQueryConfig              *OperationLiveQueryConfig        `json:"liveQueryConfig"`
+	MultipartForms               []*OperationMultipartForm        `json:"multipartForms"`
+	Name                         string                           `json:"name"`
+	OperationType                OperationType                    `json:"operationType"`
+	Path                         string                           `json:"path"`
+	PostResolveTransformations   []*PostResolveTransformation     `json:"postResolveTransformations"`
+	RateLimit                    *OperationRateLimit              `json:"rateLimit"`
+	ResponseSchema               string                           `json:"responseSchema,omitempty"`
+	Transaction                  *OperationTransaction            `json:"transaction"`
+	VariablesConfiguration       *OperationVariablesConfiguration `json:"variablesConfiguration"`
+	VariablesSchema              string                           `json:"variablesSchema,omitempty"`
 }
 
-type ApiAuthenticationConfig struct {
-	CookieBased  *CookieBasedAuthentication `json:"cookieBased"`
-	Hooks        *ApiAuthenticationHooks    `json:"hooks"`
-	JwksBased    *JwksBasedAuthentication   `json:"jwksBased"`
-	PublicClaims []string                   `json:"publicClaims"`
+type User_customClaims map[string]any
+
+type WunderGraphConfiguration struct {
+	Api                              *UserDefinedApi `json:"api"`
+	ApiId                            string          `json:"apiId,omitempty"`
+	ApiName                          string          `json:"apiName,omitempty"`
+	DangerouslyEnableGraphQLEndpoint bool            `json:"dangerouslyEnableGraphQLEndpoint,omitempty"`
+	DeploymentName                   string          `json:"deploymentName,omitempty"`
+	EnvironmentIds                   []string        `json:"environmentIds,omitempty"`
 }
 
-type TypeField_quotes map[string]*QuoteField
+type DataSourceRESTRewriter_valueRewrites map[string]string
 
-type MiddlewareHookResponse struct {
-	Error                   string         `json:"error,omitempty"`
-	Hook                    string         `json:"hook"`
-	Input                   any            `json:"input"`
-	Op                      string         `json:"op"`
-	Response                any            `json:"response"`
-	SetClientRequestHeaders RequestHeaders `json:"setClientRequestHeaders"`
-}
-
-type CustomizeHookPayload_variables map[string]any
-
-type OperationsConfig_function_operation_files map[string]*ExtensionOperationFile
-
-type OnResponseHookResponse struct {
-	Cancel   bool                 `json:"cancel"`
-	Response *WunderGraphResponse `json:"response"`
-	Skip     bool                 `json:"skip"`
-}
-
-type ArgumentConfiguration struct {
-	Name                string                      `json:"name"`
-	RenameTypeTo        string                      `json:"renameTypeTo"`
-	RenderConfiguration ArgumentRenderConfiguration `json:"renderConfiguration"`
-	SourcePath          []string                    `json:"sourcePath"`
-	SourceType          ArgumentSource              `json:"sourceType"`
-}
-
-type DataSourceRESTSubfield struct {
-	Name string `json:"name"`
-	Type int64  `json:"type"`
-}
-
-type TypeField struct {
-	FieldNames []string         `json:"fieldNames"`
-	Quotes     TypeField_quotes `json:"quotes,omitempty"`
-	TypeName   string           `json:"typeName"`
-}
+type DataSourceConfiguration_customRestResponseRewriterMap map[string]*DataSourceCustom_REST_Rewriter
 
 type SingleTypeField struct {
 	FieldName string `json:"fieldName"`
 	TypeName  string `json:"typeName"`
 }
 
-type DataSourceConfiguration_customRestResponseRewriterMap map[string]*DataSourceCustom_REST_Rewriter
+type DataSourceRESTRewriter_applySubCommonFieldValues map[string]string
 
-type ListenerOptions struct {
-	Host *ConfigurationVariable `json:"host"`
-	Port *ConfigurationVariable `json:"port"`
+type ConfigurationVariable struct {
+	EnvironmentVariableDefaultValue string                    `json:"environmentVariableDefaultValue,omitempty"`
+	EnvironmentVariableName         string                    `json:"environmentVariableName,omitempty"`
+	Kind                            ConfigurationVariableKind `json:"kind"`
+	PlaceholderVariableName         string                    `json:"placeholderVariableName,omitempty"`
+	StaticVariableContent           string                    `json:"staticVariableContent,omitempty"`
 }
 
-type HookFile struct {
-	Name     string `json:"name"`
-	Provider string `json:"provider"`
-	Size     int64  `json:"size"`
-	Type     string `json:"type"`
+type ServerLogging struct {
+	Level *ConfigurationVariable `json:"level"`
+}
+
+type QuoteField struct {
+	Indexes []int64 `json:"indexes"`
 }
 
 type User struct {
@@ -706,117 +543,81 @@ type User struct {
 	ZoneInfo          string            `json:"zoneInfo,omitempty"`
 }
 
-type ClaimRemoveIfNoneMatch struct {
-	Name string                     `json:"name"`
-	Type ClaimRemoveIfNoneMatchType `json:"type"`
+type Health struct {
+	Report *HealthReport `json:"report"`
+	Status string        `json:"status"`
 }
 
-type Operation struct {
-	AuthenticationConfig         *OperationAuthenticationConfig   `json:"authenticationConfig"`
-	AuthorizationConfig          *OperationAuthorizationConfig    `json:"authorizationConfig"`
-	CacheConfig                  *OperationCacheConfig            `json:"cacheConfig"`
-	Content                      string                           `json:"content"`
-	DatasourceQuotes             Operation_datasourceQuotes       `json:"datasourceQuotes"`
-	Engine                       OperationExecutionEngine         `json:"engine"`
-	HooksConfiguration           *OperationHooksConfiguration     `json:"hooksConfiguration"`
-	InjectedVariablesSchema      string                           `json:"injectedVariablesSchema,omitempty"`
-	Internal                     bool                             `json:"internal"`
-	InternalVariablesSchema      string                           `json:"internalVariablesSchema,omitempty"`
-	InterpolationVariablesSchema string                           `json:"interpolationVariablesSchema,omitempty"`
-	LiveQueryConfig              *OperationLiveQueryConfig        `json:"liveQueryConfig"`
-	MultipartForms               []*OperationMultipartForm        `json:"multipartForms"`
-	Name                         string                           `json:"name"`
-	OperationType                OperationType                    `json:"operationType"`
-	Path                         string                           `json:"path"`
-	PostResolveTransformations   []*PostResolveTransformation     `json:"postResolveTransformations"`
-	RateLimit                    *OperationRateLimit              `json:"rateLimit"`
-	ResponseSchema               string                           `json:"responseSchema,omitempty"`
-	Transaction                  *OperationTransaction            `json:"transaction"`
-	VariablesConfiguration       *OperationVariablesConfiguration `json:"variablesConfiguration"`
-	VariablesSchema              string                           `json:"variablesSchema,omitempty"`
+type OnRequestHookPayload struct {
+	Wg            *BaseRequestBodyWg  `json:"__wg"`
+	ArgsAllowList []string            `json:"argsAllowList"`
+	OperationName string              `json:"operationName"`
+	OperationType OperationTypeString `json:"operationType"`
+	Request       *WunderGraphRequest `json:"request"`
 }
 
-type UpstreamAuthentication struct {
-	JwtConfig                        *JwtUpstreamAuthenticationConfig                  `json:"jwtConfig"`
-	JwtWithAccessTokenExchangeConfig *JwtUpstreamAuthenticationWithAccessTokenExchange `json:"jwtWithAccessTokenExchangeConfig"`
-	Kind                             UpstreamAuthenticationKind                        `json:"kind"`
+type DateOffset struct {
+	Previous bool           `json:"previous"`
+	Unit     DateOffsetUnit `json:"unit"`
+	Value    int64          `json:"value"`
 }
 
-type OperationRateLimit struct {
-	Enabled   bool  `json:"enabled"`
-	PerSecond int64 `json:"perSecond"`
-	Requests  int64 `json:"requests"`
+type ApiAuthenticationConfig struct {
+	CookieBased  *CookieBasedAuthentication `json:"cookieBased"`
+	Hooks        *ApiAuthenticationHooks    `json:"hooks"`
+	JwksBased    *JwksBasedAuthentication   `json:"jwksBased"`
+	PublicClaims []string                   `json:"publicClaims"`
 }
 
-type S3UploadProfile struct {
-	AllowedFileExtensions     []string                           `json:"allowedFileExtensions"`
-	AllowedMimeTypes          []string                           `json:"allowedMimeTypes"`
-	Hooks                     *S3UploadProfileHooksConfiguration `json:"hooks"`
-	MaxAllowedFiles           int64                              `json:"maxAllowedFiles"`
-	MaxAllowedUploadSizeBytes int64                              `json:"maxAllowedUploadSizeBytes"`
-	MetadataJSONSchema        string                             `json:"metadataJSONSchema"`
-	RequireAuthentication     bool                               `json:"requireAuthentication"`
+type TypeConfiguration struct {
+	RenameTo string `json:"renameTo"`
+	TypeName string `json:"typeName"`
 }
 
-type Schemas map[string]*SchemaRef
-
-type DataSourceCustom_Static struct {
-	Data *ConfigurationVariable `json:"data"`
+type CookieBasedAuthentication struct {
+	AuthorizedRedirectUriRegexes []*ConfigurationVariable `json:"authorizedRedirectUriRegexes"`
+	AuthorizedRedirectUris       []*ConfigurationVariable `json:"authorizedRedirectUris"`
+	BlockKey                     *ConfigurationVariable   `json:"blockKey"`
+	CsrfSecret                   *ConfigurationVariable   `json:"csrfSecret"`
+	HashKey                      *ConfigurationVariable   `json:"hashKey"`
+	Providers                    []*AuthProvider          `json:"providers"`
 }
 
-type OperationCacheConfig struct {
-	Enabled              bool  `json:"enabled"`
-	MaxAge               int64 `json:"maxAge"`
-	Public               bool  `json:"public"`
-	StaleWhileRevalidate int64 `json:"staleWhileRevalidate"`
+type OnResponseHookResponse struct {
+	Cancel   bool                 `json:"cancel"`
+	Response *WunderGraphResponse `json:"response"`
+	Skip     bool                 `json:"skip"`
 }
 
-type DirectiveConfiguration struct {
-	DirectiveName string `json:"directiveName"`
-	RenameTo      string `json:"renameTo"`
+type CorsConfiguration struct {
+	AllowCredentials bool                     `json:"allowCredentials"`
+	AllowedHeaders   []string                 `json:"allowedHeaders"`
+	AllowedMethods   []string                 `json:"allowedMethods"`
+	AllowedOrigins   []*ConfigurationVariable `json:"allowedOrigins"`
+	ExposedHeaders   []string                 `json:"exposedHeaders"`
+	MaxAge           int64                    `json:"maxAge"`
 }
 
-type OperationHookPayload struct {
-	Wg                      *BaseRequestBodyWg            `json:"__wg"`
-	Hook                    MiddlewareHook                `json:"hook"`
-	Input                   any                           `json:"input"`
-	Op                      string                        `json:"op"`
-	Response                OperationHookPayload_response `json:"response"`
-	SetClientRequestHeaders RequestHeaders                `json:"setClientRequestHeaders"`
+type WebhookConfiguration struct {
+	FilePath string           `json:"filePath"`
+	Name     string           `json:"name"`
+	Verifier *WebhookVerifier `json:"verifier"`
 }
 
-type DatasourceQuote struct {
-	Fields []string `json:"fields"`
+type ClaimConfig struct {
+	ClaimType              ClaimType               `json:"claimType"`
+	Custom                 *CustomClaim            `json:"custom"`
+	RemoveIfNoneMatch      *ClaimRemoveIfNoneMatch `json:"removeIfNoneMatch"`
+	VariablePathComponents []string                `json:"variablePathComponents"`
 }
 
-type QuoteField struct {
-	Indexes []int64 `json:"indexes"`
+type VariableWhereInputConfiguration struct {
+	VariablePathComponents []string            `json:"variablePathComponents"`
+	WhereInput             *VariableWhereInput `json:"whereInput"`
 }
 
-type GithubAuthProviderConfig struct {
-	ClientId     *ConfigurationVariable `json:"clientId"`
-	ClientSecret *ConfigurationVariable `json:"clientSecret"`
-}
-
-type JwtUpstreamAuthenticationConfig struct {
-	Secret        *ConfigurationVariable `json:"secret"`
-	SigningMethod int64                  `json:"signingMethod"`
-}
-
-type HTTPHeader struct {
-	Values []*ConfigurationVariable `json:"values"`
-}
-
-type PostResolveTransformation struct {
-	Depth int64                         `json:"depth"`
-	Get   *PostResolveGetTransformation `json:"get"`
-	Kind  PostResolveTransformationKind `json:"kind"`
-}
-
-type ServerOptions struct {
-	Listen    *ListenerOptions       `json:"listen"`
-	Logger    *ServerLogging         `json:"logger"`
-	ServerUrl *ConfigurationVariable `json:"serverUrl"`
+type JwksBasedAuthentication struct {
+	Providers []*JwksAuthProvider `json:"providers"`
 }
 
 type WunderGraphRequest struct {
@@ -827,29 +628,135 @@ type WunderGraphRequest struct {
 	RequestURI string         `json:"requestURI"`
 }
 
-type Health struct {
-	Report *HealthReport `json:"report"`
-	Status string        `json:"status"`
+type UploadHookResponse struct {
+	Error   string `json:"error"`
+	FileKey string `json:"fileKey"`
 }
 
-type DataSourceRESTRewriter struct {
-	ApplySubCommonField       string                                           `json:"applySubCommonField,omitempty"`
-	ApplySubCommonFieldValues DataSourceRESTRewriter_applySubCommonFieldValues `json:"applySubCommonFieldValues,omitempty"`
-	ApplySubFieldTypes        []*DataSourceRESTSubfield                        `json:"applySubFieldTypes,omitempty"`
-	ApplySubObjects           []*DataSourceRESTSubObject                       `json:"applySubObjects,omitempty"`
-	CustomEnumField           string                                           `json:"customEnumField,omitempty"`
-	CustomObjectName          string                                           `json:"customObjectName,omitempty"`
-	FieldRewriteTo            string                                           `json:"fieldRewriteTo,omitempty"`
-	PathComponents            []string                                         `json:"pathComponents"`
-	QuoteObjectName           string                                           `json:"quoteObjectName,omitempty"`
-	Type                      int64                                            `json:"type"`
-	ValueRewrites             DataSourceRESTRewriter_valueRewrites             `json:"valueRewrites,omitempty"`
+type ClaimRemoveIfNoneMatch struct {
+	Name string                     `json:"name"`
+	Type ClaimRemoveIfNoneMatchType `json:"type"`
 }
 
-type MTLSConfiguration struct {
-	Cert               *ConfigurationVariable `json:"cert"`
-	InsecureSkipVerify bool                   `json:"insecureSkipVerify"`
-	Key                *ConfigurationVariable `json:"key"`
+type OperationAuthorizationConfig struct {
+	Claims     []*ClaimConfig       `json:"claims"`
+	RoleConfig *OperationRoleConfig `json:"roleConfig"`
+}
+
+type EngineConfiguration struct {
+	DatasourceConfigurations []*DataSourceConfiguration `json:"datasourceConfigurations"`
+	DefaultFlushInterval     int64                      `json:"defaultFlushInterval"`
+	FieldConfigurations      []*FieldConfiguration      `json:"fieldConfigurations"`
+	GraphqlSchema            string                     `json:"graphqlSchema"`
+	TypeConfigurations       []*TypeConfiguration       `json:"typeConfigurations"`
+}
+
+type FieldConfiguration struct {
+	ArgumentsConfiguration     []*ArgumentConfiguration `json:"argumentsConfiguration"`
+	DisableDefaultFieldMapping bool                     `json:"disableDefaultFieldMapping"`
+	FieldName                  string                   `json:"fieldName"`
+	Path                       []string                 `json:"path"`
+	RequiresFields             []string                 `json:"requiresFields"`
+	TypeName                   string                   `json:"typeName"`
+	UnescapeResponseJson       bool                     `json:"unescapeResponseJson"`
+}
+
+type OperationLiveQueryConfig struct {
+	Enabled                bool  `json:"enabled"`
+	PollingIntervalSeconds int64 `json:"pollingIntervalSeconds"`
+}
+
+type RequestError struct {
+	Locations []*Location `json:"locations,omitempty"`
+	Message   string      `json:"message"`
+	Path      *ErrorPath  `json:"path"`
+}
+
+type PostResolveGetTransformation struct {
+	DateTimeFormat string   `json:"dateTimeFormat"`
+	From           []string `json:"from"`
+	To             []string `json:"to"`
+}
+
+type TypeField struct {
+	FieldNames []string         `json:"fieldNames"`
+	Quotes     TypeField_quotes `json:"quotes,omitempty"`
+	TypeName   string           `json:"typeName"`
+}
+
+type DataSourceConfiguration_customRestRequestRewriterMap map[string]*DataSourceCustom_REST_Rewriter
+
+type OperationTransaction struct {
+	IsolationLevel int64 `json:"isolationLevel"`
+	MaxWaitSeconds int64 `json:"maxWaitSeconds"`
+	TimeoutSeconds int64 `json:"timeoutSeconds"`
+}
+
+type UploadHookPayload_error struct {
+	Message string `json:"message"`
+	Name    string `json:"name"`
+}
+
+type DataSourceCustom_Static struct {
+	Data *ConfigurationVariable `json:"data"`
+}
+
+type BaseRequestBody struct {
+	Wg *BaseRequestBodyWg `json:"__wg"`
+}
+
+type OnWsConnectionInitHookPayload struct {
+	DataSourceId string              `json:"dataSourceId"`
+	Request      *WunderGraphRequest `json:"request"`
+}
+
+type VariableInjectionConfiguration struct {
+	DateFormat              string             `json:"dateFormat"`
+	DateOffset              *DateOffset        `json:"dateOffset"`
+	EnvironmentVariableName string             `json:"environmentVariableName"`
+	FromHeaderName          string             `json:"fromHeaderName"`
+	VariableKind            InjectVariableKind `json:"variableKind"`
+	VariablePathComponents  []string           `json:"variablePathComponents"`
+}
+
+type WebhookVerifier struct {
+	Kind                  WebhookVerifierKind    `json:"kind"`
+	Secret                *ConfigurationVariable `json:"secret"`
+	SignatureHeader       string                 `json:"signatureHeader"`
+	SignatureHeaderPrefix string                 `json:"signatureHeaderPrefix"`
+}
+
+type PostResolveTransformation struct {
+	Depth int64                         `json:"depth"`
+	Get   *PostResolveGetTransformation `json:"get"`
+	Kind  PostResolveTransformationKind `json:"kind"`
+}
+
+type CustomizeHookPayload_variables map[string]any
+
+type OperationMultipartForm struct {
+	FieldName string `json:"fieldName"`
+	IsArray   bool   `json:"isArray"`
+}
+
+type ArgumentConfiguration struct {
+	Name                string                      `json:"name"`
+	RenameTypeTo        string                      `json:"renameTypeTo"`
+	RenderConfiguration ArgumentRenderConfiguration `json:"renderConfiguration"`
+	SourcePath          []string                    `json:"sourcePath"`
+	SourceType          ArgumentSource              `json:"sourceType"`
+}
+
+type VariableWhereInputRelationFilter struct {
+	Type  VariableWhereInputRelationFilterType `json:"type"`
+	Where *VariableWhereInput                  `json:"where"`
+}
+
+type CustomClaim struct {
+	JsonPathComponents []string  `json:"jsonPathComponents"`
+	Name               string    `json:"name"`
+	Required           bool      `json:"required"`
+	Type               ValueType `json:"type"`
 }
 
 type ArgumentRenderConfiguration int64
@@ -887,7 +794,7 @@ type ClaimType int64
 
 const (
 	ClaimType_ISSUER             ClaimType = 0
-	ClaimType_USERID             ClaimType = 1
+	ClaimType_SUBJECT            ClaimType = 1
 	ClaimType_WEBSITE            ClaimType = 10
 	ClaimType_EMAIL              ClaimType = 11
 	ClaimType_EMAIL_VERIFIED     ClaimType = 12
@@ -1090,7 +997,6 @@ const (
 	Endpoint_onConnectionInit           Endpoint = "/global/wsTransport/onConnectionInit"
 	Endpoint_customize                  Endpoint = "/gqls/{name}/graphql"
 	Endpoint_health                     Endpoint = "/health"
-	Endpoint__internalRequest           Endpoint = "/internal/operations/{path}"
 	Endpoint_customResolve              Endpoint = "/operation/{path}/customResolve"
 	Endpoint_mockResolve                Endpoint = "/operation/{path}/mockResolve"
 	Endpoint_mutatingPostResolve        Endpoint = "/operation/{path}/mutatingPostResolve"
