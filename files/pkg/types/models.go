@@ -33,6 +33,15 @@ type AuthProvider struct {
 	OidcConfig   *OpenIDConnectAuthProviderConfig `json:"oidcConfig"`
 }
 
+type BaseRequestBody struct {
+	Wg *BaseRequestBodyWg `json:"__wg"`
+}
+
+type BaseRequestBodyWg struct {
+	ClientRequest *WunderGraphRequest `json:"clientRequest"`
+	User          *User               `json:"user"`
+}
+
 type ClaimConfig struct {
 	ClaimType              ClaimType               `json:"claimType"`
 	Custom                 *CustomClaim            `json:"custom"`
@@ -77,6 +86,15 @@ type CustomClaim struct {
 	Required           bool      `json:"required"`
 	Type               ValueType `json:"type"`
 }
+
+type CustomizeHookPayload struct {
+	Wg            *BaseRequestBodyWg             `json:"__wg"`
+	OperationName string                         `json:"operationName"`
+	Query         string                         `json:"query"`
+	Variables     CustomizeHookPayload_variables `json:"variables"`
+}
+
+type CustomizeHookPayload_variables map[string]any
 
 type DataSourceConfiguration struct {
 	ChildNodes                    []*TypeField                                          `json:"childNodes"`
@@ -262,6 +280,13 @@ type Health struct {
 	Status string        `json:"status"`
 }
 
+type HealthReport struct {
+	Customizes []string  `json:"customizes"`
+	Functions  []string  `json:"functions"`
+	Proxys     []string  `json:"proxys"`
+	Time       time.Time `json:"time"`
+}
+
 type HookFile struct {
 	Name     string `json:"name"`
 	Provider string `json:"provider"`
@@ -339,10 +364,25 @@ type NodeOptions struct {
 	PublicNodeUrl                *ConfigurationVariable `json:"publicNodeUrl"`
 }
 
+type OnRequestHookPayload struct {
+	Wg            *BaseRequestBodyWg  `json:"__wg"`
+	ArgsAllowList []string            `json:"argsAllowList"`
+	OperationName string              `json:"operationName"`
+	OperationType OperationTypeString `json:"operationType"`
+	Request       *WunderGraphRequest `json:"request"`
+}
+
 type OnRequestHookResponse struct {
 	Cancel  bool                `json:"cancel"`
 	Request *WunderGraphRequest `json:"request"`
 	Skip    bool                `json:"skip"`
+}
+
+type OnResponseHookPayload struct {
+	Wg            *BaseRequestBodyWg   `json:"__wg"`
+	OperationName string               `json:"operationName"`
+	OperationType string               `json:"operationType"`
+	Response      *WunderGraphResponse `json:"response"`
 }
 
 type OnResponseHookResponse struct {
@@ -354,6 +394,10 @@ type OnResponseHookResponse struct {
 type OnWsConnectionInitHookPayload struct {
 	DataSourceId string              `json:"dataSourceId"`
 	Request      *WunderGraphRequest `json:"request"`
+}
+
+type OnWsConnectionInitHookResponse struct {
+	Payload any `json:"payload"`
 }
 
 type OpenIDConnectAuthProviderConfig struct {
@@ -409,6 +453,20 @@ type OperationCacheConfig struct {
 	MaxAge               int64 `json:"maxAge"`
 	Public               bool  `json:"public"`
 	StaleWhileRevalidate int64 `json:"staleWhileRevalidate"`
+}
+
+type OperationHookPayload struct {
+	Wg                      *BaseRequestBodyWg            `json:"__wg"`
+	Hook                    MiddlewareHook                `json:"hook"`
+	Input                   any                           `json:"input"`
+	Op                      string                        `json:"op"`
+	Response                OperationHookPayload_response `json:"response"`
+	SetClientRequestHeaders RequestHeaders                `json:"setClientRequestHeaders"`
+}
+
+type OperationHookPayload_response struct {
+	Data   any             `json:"data"`
+	Errors []*RequestError `json:"errors"`
 }
 
 type OperationHooksConfiguration struct {
@@ -556,6 +614,18 @@ type URLQueryConfiguration struct {
 	Value string `json:"value"`
 }
 
+type UploadHookPayload struct {
+	Wg    *BaseRequestBodyWg      `json:"__wg"`
+	Error UploadHookPayload_error `json:"error"`
+	File  *HookFile               `json:"file"`
+	Meta  any                     `json:"meta"`
+}
+
+type UploadHookPayload_error struct {
+	Message string `json:"message"`
+	Name    string `json:"name"`
+}
+
 type UploadHookResponse struct {
 	Error   string `json:"error"`
 	FileKey string `json:"fileKey"`
@@ -689,76 +759,6 @@ type WunderGraphResponse struct {
 	StatusCode int64          `json:"statusCode"`
 }
 
-type BaseRequestBody struct {
-	Wg *BaseRequestBodyWg `json:"__wg"`
-}
-
-type BaseRequestBodyWg struct {
-	ClientRequest *WunderGraphRequest `json:"clientRequest"`
-	User          *User               `json:"user"`
-}
-
-type CustomizeHookPayload struct {
-	Wg            *BaseRequestBodyWg             `json:"__wg"`
-	OperationName string                         `json:"operationName"`
-	Query         string                         `json:"query"`
-	Variables     CustomizeHookPayload_variables `json:"variables"`
-}
-
-type CustomizeHookPayload_variables map[string]any
-
-type HealthReport struct {
-	Customizes []string  `json:"customizes"`
-	Functions  []string  `json:"functions"`
-	Proxys     []string  `json:"proxys"`
-	Time       time.Time `json:"time"`
-}
-
-type OnRequestHookPayload struct {
-	Wg            *BaseRequestBodyWg  `json:"__wg"`
-	ArgsAllowList []string            `json:"argsAllowList"`
-	OperationName string              `json:"operationName"`
-	OperationType OperationTypeString `json:"operationType"`
-	Request       *WunderGraphRequest `json:"request"`
-}
-
-type OnResponseHookPayload struct {
-	Wg            *BaseRequestBodyWg   `json:"__wg"`
-	OperationName string               `json:"operationName"`
-	OperationType string               `json:"operationType"`
-	Response      *WunderGraphResponse `json:"response"`
-}
-
-type OnWsConnectionInitHookResponse struct {
-	Payload any `json:"payload"`
-}
-
-type OperationHookPayload struct {
-	Wg                      *BaseRequestBodyWg            `json:"__wg"`
-	Hook                    MiddlewareHook                `json:"hook"`
-	Input                   any                           `json:"input"`
-	Op                      string                        `json:"op"`
-	Response                OperationHookPayload_response `json:"response"`
-	SetClientRequestHeaders RequestHeaders                `json:"setClientRequestHeaders"`
-}
-
-type OperationHookPayload_response struct {
-	Data   any             `json:"data"`
-	Errors []*RequestError `json:"errors"`
-}
-
-type UploadHookPayload struct {
-	Wg    *BaseRequestBodyWg      `json:"__wg"`
-	Error UploadHookPayload_error `json:"error"`
-	File  *HookFile               `json:"file"`
-	Meta  any                     `json:"meta"`
-}
-
-type UploadHookPayload_error struct {
-	Message string `json:"message"`
-	Name    string `json:"name"`
-}
-
 type ArgumentRenderConfiguration int64
 
 const (
@@ -793,8 +793,8 @@ const (
 type ClaimType int64
 
 const (
-	ClaimType_ISSUER             ClaimType = 0
-	ClaimType_SUBJECT            ClaimType = 1
+	ClaimType_PROVIDER           ClaimType = 0
+	ClaimType_USERID             ClaimType = 1
 	ClaimType_WEBSITE            ClaimType = 10
 	ClaimType_EMAIL              ClaimType = 11
 	ClaimType_EMAIL_VERIFIED     ClaimType = 12
@@ -1020,6 +1020,13 @@ const (
 	HookParent_operation      HookParent = "operation"
 	HookParent_proxy          HookParent = "proxy"
 	HookParent_storage        HookParent = "storage"
+)
+
+type InternalEndpoint string
+
+const (
+	InternalEndpoint_internalTransaction InternalEndpoint = "/internal/notifyTransactionFinish"
+	InternalEndpoint_internalRequest     InternalEndpoint = "/internal/operations/{path}"
 )
 
 type OperationField string

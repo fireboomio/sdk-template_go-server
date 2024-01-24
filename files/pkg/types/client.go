@@ -11,10 +11,9 @@ type (
 	InternalRequestFunction func(*InternalClientRequestContext, OperationArgsWithInput[any]) (any, error)
 	InternalClientFactory   func(map[string]string, WunderGraphRequest) *InternalClient
 	InternalClient          struct {
-		WithHeaders func(map[string]string) *InternalClient
-		Context     *InternalClientRequestContext
-		Queries     OperationDefinitions
-		Mutations   OperationDefinitions
+		Context   *InternalClientRequestContext
+		Queries   OperationDefinitions
+		Mutations OperationDefinitions
 	}
 	InternalClientRequestContext struct {
 		ExtraHeaders  map[string]string
@@ -23,6 +22,11 @@ type (
 	}
 )
 
+func (i *InternalClient) WithHeaders(headers map[string]string) *InternalClient {
+	i.Context.ExtraHeaders = headers
+	return i
+}
+
 func InternalClientFactoryCall(headers map[string]string, clientRequest *WunderGraphRequest, user *User) *InternalClient {
 	client := &InternalClient{
 		Context: &InternalClientRequestContext{
@@ -30,10 +34,6 @@ func InternalClientFactoryCall(headers map[string]string, clientRequest *WunderG
 			ClientRequest: clientRequest,
 			User:          user,
 		},
-	}
-	client.WithHeaders = func(headers map[string]string) *InternalClient {
-		client.Context.ExtraHeaders = headers
-		return client
 	}
 	return client
 }

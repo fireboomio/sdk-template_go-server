@@ -7,9 +7,11 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
 	"io"
 	"net/http"
+	"strings"
 )
 
 var DefaultInternalClient *types.InternalClient
@@ -31,7 +33,7 @@ func BuildInternalRequest(logger echo.Logger, operationType types.OperationType)
 	internalOperations := operations[operationType]
 	result := make(types.OperationDefinitions, len(internalOperations))
 	for _, name := range internalOperations {
-		url := fmt.Sprintf("%s/internal/operations/%s", types.PrivateNodeUrl, name)
+		url := types.PrivateNodeUrl + strings.ReplaceAll(string(types.InternalEndpoint_internalRequest), "{path}", name)
 		logger.Debugf(`Built internalRequest (%s)`, url)
 		result[name] = func(ctx *types.InternalClientRequestContext, options types.OperationArgsWithInput[any]) (any, error) {
 			return internalRequest(url, ctx, options)
@@ -124,16 +126,31 @@ func NewOperationMeta[I, O any](path string, operationType types.OperationType) 
 	return &Meta[I, O]{Path: path, Type: operationType}
 }
 
-func (m *Meta[I, O]) Execute(input I, context ...*types.InternalClientRequestContext) (O, error) {
-	requestCtx := DefaultInternalClient.Context
-	if len(context) > 0 {
-		requestCtx = context[0]
+func (m *Meta[I, O]) Execute(input I, client ...*types.InternalClient) (O, error) {
+	executeClient := DefaultInternalClient
+	if len(client) > 0 && client[0] != nil {
+		executeClient = client[0]
 	}
 
-	operationDefinitions := DefaultInternalClient.Queries
+	operationDefinitions := executeClient.Queries
 	if m.Type == 1 {
-		operationDefinitions = DefaultInternalClient.Mutations
+		operationDefinitions = executeClient.Mutations
 	}
 
-	return executeInternalRequest[I, O](requestCtx, operationDefinitions, m.Path, input)
+	return executeInternalRequest[I, O](executeClient.Context, operationDefinitions, m.Path, input)
+}
+
+func ExecuteWithTransaction(client *types.InternalClient, execute func() error) error {
+	transactionId := uuid.New().String()
+	client.WithHeaders(types.RequestHeaders{
+		string(types.TransactionHeader_X_Transaction_Manually): "true",
+		string(types.TransactionHeader_X_Transaction_Id):       transactionId,
+	})
+	var body []byte
+	if err := execute(); err != nil {
+		body = []byte(fmt.Sprintf(`{"error": "%s"}`, err.Error()))
+	}
+	url := types.PrivateNodeUrl + string(types.InternalEndpoint_internalTransaction)
+	_, err := utils.HttpPost(url, body, client.Context.ExtraHeaders)
+	return err
 }
