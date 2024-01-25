@@ -77,11 +77,11 @@ func (u *UploadClient) Upload(parameter *UploadParameter) (uploadResp types.Uplo
 
 	req.Header.Add("Content-Type", writer.FormDataContentType())
 	if len(parameter.Profile) > 0 {
-		req.Header.Add("X-Upload-Profile", string(parameter.Profile))
+		req.Header.Add(string(types.InternalHeader_X_Upload_Profile), string(parameter.Profile))
 	}
 	if parameter.Metadata != nil {
 		metadataBytes, _ := json.Marshal(parameter.Metadata)
-		req.Header.Add("X-Metadata", string(metadataBytes))
+		req.Header.Add(string(types.InternalHeader_X_Metadata), string(metadataBytes))
 	}
 
 	resp, err := uploadHttpClient.Do(req)

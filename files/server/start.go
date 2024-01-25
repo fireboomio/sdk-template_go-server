@@ -104,7 +104,7 @@ func configureWunderGraphServer() *echo.Echo {
 					}
 				}
 			}
-			headerRequestIdKey := string(types.RequestHeaderKey_X_Request_Id)
+			headerRequestIdKey := string(types.InternalHeader_X_Request_Id)
 			reqId := c.Request().Header.Get(headerRequestIdKey)
 			internalClient := types.InternalClientFactoryCall(map[string]string{headerRequestIdKey: reqId}, body.Wg)
 			internalClient.Queries = internalQueries

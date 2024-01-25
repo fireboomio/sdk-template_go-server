@@ -829,6 +829,14 @@ const (
 	ConfigurationVariableKind_PLACEHOLDER_CONFIGURATION_VARIABLE ConfigurationVariableKind = 2
 )
 
+type CustomizeFlag string
+
+const (
+	CustomizeFlag_graphqlEndpoint CustomizeFlag = "${graphqlEndpoint}"
+	CustomizeFlag___schema        CustomizeFlag = "__schema"
+	CustomizeFlag_subscription    CustomizeFlag = "subscription"
+)
+
 type DataSourceKind int64
 
 const (
@@ -854,6 +862,32 @@ const (
 	DateOffsetUnit_SECOND DateOffsetUnit = 5
 )
 
+type Endpoint string
+
+const (
+	Endpoint_mutatingPostAuthentication Endpoint = "/authentication/mutatingPostAuthentication"
+	Endpoint_postAuthentication         Endpoint = "/authentication/postAuthentication"
+	Endpoint_postLogout                 Endpoint = "/authentication/postLogout"
+	Endpoint_revalidateAuthentication   Endpoint = "/authentication/revalidateAuthentication"
+	Endpoint_function                   Endpoint = "/function/{path}"
+	Endpoint_afterOriginResponse        Endpoint = "/global/httpTransport/afterOriginResponse"
+	Endpoint_beforeOriginRequest        Endpoint = "/global/httpTransport/beforeOriginRequest"
+	Endpoint_onOriginRequest            Endpoint = "/global/httpTransport/onOriginRequest"
+	Endpoint_onOriginResponse           Endpoint = "/global/httpTransport/onOriginResponse"
+	Endpoint_onConnectionInit           Endpoint = "/global/wsTransport/onConnectionInit"
+	Endpoint_customize                  Endpoint = "/gqls/{name}/graphql"
+	Endpoint_health                     Endpoint = "/health"
+	Endpoint_customResolve              Endpoint = "/operation/{path}/customResolve"
+	Endpoint_mockResolve                Endpoint = "/operation/{path}/mockResolve"
+	Endpoint_mutatingPostResolve        Endpoint = "/operation/{path}/mutatingPostResolve"
+	Endpoint_mutatingPreResolve         Endpoint = "/operation/{path}/mutatingPreResolve"
+	Endpoint_postResolve                Endpoint = "/operation/{path}/postResolve"
+	Endpoint_preResolve                 Endpoint = "/operation/{path}/preResolve"
+	Endpoint_proxy                      Endpoint = "/proxy/{path}"
+	Endpoint_postUpload                 Endpoint = "/upload/{provider}/{profile}/postUpload"
+	Endpoint_preUpload                  Endpoint = "/upload/{provider}/{profile}/preUpload"
+)
+
 type HTTPMethod int64
 
 const (
@@ -868,6 +902,20 @@ const (
 	HTTPMethod_TRACE   HTTPMethod = 8
 )
 
+type HookParent string
+
+const (
+	HookParent_authentication HookParent = "authentication"
+	HookParent_customize      HookParent = "customize"
+	HookParent_fragment       HookParent = "fragment"
+	HookParent_function       HookParent = "function"
+	HookParent_generated      HookParent = "generated"
+	HookParent_global         HookParent = "global"
+	HookParent_operation      HookParent = "operation"
+	HookParent_proxy          HookParent = "proxy"
+	HookParent_storage        HookParent = "storage"
+)
+
 type InjectVariableKind int64
 
 const (
@@ -875,6 +923,22 @@ const (
 	InjectVariableKind_DATE_TIME            InjectVariableKind = 1
 	InjectVariableKind_ENVIRONMENT_VARIABLE InjectVariableKind = 2
 	InjectVariableKind_FROM_HEADER          InjectVariableKind = 3
+)
+
+type InternalEndpoint string
+
+const (
+	InternalEndpoint_internalTransaction InternalEndpoint = "/internal/notifyTransactionFinish"
+	InternalEndpoint_internalRequest     InternalEndpoint = "/internal/operations/{path}"
+	InternalEndpoint_s3upload            InternalEndpoint = "/s3/{provider}/upload"
+)
+
+type InternalHeader string
+
+const (
+	InternalHeader_X_Metadata       InternalHeader = "X-Metadata"
+	InternalHeader_X_Request_Id     InternalHeader = "X-Request-Id"
+	InternalHeader_X_Upload_Profile InternalHeader = "X-Upload-Profile"
 )
 
 type MiddlewareHook string
@@ -905,6 +969,15 @@ const (
 	OperationExecutionEngine_ENGINE_PROXY    OperationExecutionEngine = 2
 )
 
+type OperationField string
+
+const (
+	OperationField_operationType   OperationField = "operationType"
+	OperationField_path            OperationField = "path"
+	OperationField_responseSchema  OperationField = "responseSchema"
+	OperationField_variablesSchema OperationField = "variablesSchema"
+)
+
 type OperationType int64
 
 const (
@@ -913,16 +986,48 @@ const (
 	OperationType_SUBSCRIPTION OperationType = 2
 )
 
+type OperationTypeString string
+
+const (
+	OperationTypeString_mutation     OperationTypeString = "mutation"
+	OperationTypeString_query        OperationTypeString = "query"
+	OperationTypeString_subscription OperationTypeString = "subscription"
+)
+
 type PostResolveTransformationKind int64
 
 const (
 	PostResolveTransformationKind_GET_POST_RESOLVE_TRANSFORMATION PostResolveTransformationKind = 0
 )
 
+type RateLimitHeader string
+
+const (
+	RateLimitHeader_x_rateLimit_perSecond RateLimitHeader = "x-rateLimit-perSecond"
+	RateLimitHeader_x_rateLimit_requests  RateLimitHeader = "x-rateLimit-requests"
+	RateLimitHeader_x_rateLimit_uniqueKey RateLimitHeader = "x-rateLimit-uniqueKey"
+)
+
+type RbacHeader string
+
+const (
+	RbacHeader_x_rbac_denyMatchAll    RbacHeader = "x-rbac-denyMatchAll"
+	RbacHeader_x_rbac_denyMatchAny    RbacHeader = "x-rbac-denyMatchAny"
+	RbacHeader_x_rbac_requireMatchAll RbacHeader = "x-rbac-requireMatchAll"
+	RbacHeader_x_rbac_requireMatchAny RbacHeader = "x-rbac-requireMatchAny"
+)
+
 type SigningMethod int64
 
 const (
 	SigningMethod_SigningMethodHS256 SigningMethod = 0
+)
+
+type TransactionHeader string
+
+const (
+	TransactionHeader_X_Transaction_Id       TransactionHeader = "X-Transaction-Id"
+	TransactionHeader_X_Transaction_Manually TransactionHeader = "X-Transaction-Manually"
 )
 
 type UploadHook string
@@ -978,107 +1083,4 @@ type WebhookVerifierKind int64
 
 const (
 	WebhookVerifierKind_HMAC_SHA256 WebhookVerifierKind = 0
-)
-
-type CustomizeFlag string
-
-const (
-	CustomizeFlag_graphqlEndpoint CustomizeFlag = "${graphqlEndpoint}"
-	CustomizeFlag___schema        CustomizeFlag = "__schema"
-	CustomizeFlag_subscription    CustomizeFlag = "subscription"
-)
-
-type Endpoint string
-
-const (
-	Endpoint_mutatingPostAuthentication Endpoint = "/authentication/mutatingPostAuthentication"
-	Endpoint_postAuthentication         Endpoint = "/authentication/postAuthentication"
-	Endpoint_postLogout                 Endpoint = "/authentication/postLogout"
-	Endpoint_revalidateAuthentication   Endpoint = "/authentication/revalidateAuthentication"
-	Endpoint_function                   Endpoint = "/function/{path}"
-	Endpoint_afterOriginResponse        Endpoint = "/global/httpTransport/afterOriginResponse"
-	Endpoint_beforeOriginRequest        Endpoint = "/global/httpTransport/beforeOriginRequest"
-	Endpoint_onOriginRequest            Endpoint = "/global/httpTransport/onOriginRequest"
-	Endpoint_onOriginResponse           Endpoint = "/global/httpTransport/onOriginResponse"
-	Endpoint_onConnectionInit           Endpoint = "/global/wsTransport/onConnectionInit"
-	Endpoint_customize                  Endpoint = "/gqls/{name}/graphql"
-	Endpoint_health                     Endpoint = "/health"
-	Endpoint_customResolve              Endpoint = "/operation/{path}/customResolve"
-	Endpoint_mockResolve                Endpoint = "/operation/{path}/mockResolve"
-	Endpoint_mutatingPostResolve        Endpoint = "/operation/{path}/mutatingPostResolve"
-	Endpoint_mutatingPreResolve         Endpoint = "/operation/{path}/mutatingPreResolve"
-	Endpoint_postResolve                Endpoint = "/operation/{path}/postResolve"
-	Endpoint_preResolve                 Endpoint = "/operation/{path}/preResolve"
-	Endpoint_proxy                      Endpoint = "/proxy/{path}"
-	Endpoint_postUpload                 Endpoint = "/upload/{provider}/{profile}/postUpload"
-	Endpoint_preUpload                  Endpoint = "/upload/{provider}/{profile}/preUpload"
-)
-
-type HookParent string
-
-const (
-	HookParent_authentication HookParent = "authentication"
-	HookParent_customize      HookParent = "customize"
-	HookParent_fragment       HookParent = "fragment"
-	HookParent_function       HookParent = "function"
-	HookParent_generated      HookParent = "generated"
-	HookParent_global         HookParent = "global"
-	HookParent_operation      HookParent = "operation"
-	HookParent_proxy          HookParent = "proxy"
-	HookParent_storage        HookParent = "storage"
-)
-
-type InternalEndpoint string
-
-const (
-	InternalEndpoint_internalTransaction InternalEndpoint = "/internal/notifyTransactionFinish"
-	InternalEndpoint_internalRequest     InternalEndpoint = "/internal/operations/{path}"
-	InternalEndpoint_s3upload            InternalEndpoint = "/s3/{provider}/upload"
-)
-
-type OperationField string
-
-const (
-	OperationField_operationType   OperationField = "operationType"
-	OperationField_path            OperationField = "path"
-	OperationField_responseSchema  OperationField = "responseSchema"
-	OperationField_variablesSchema OperationField = "variablesSchema"
-)
-
-type OperationTypeString string
-
-const (
-	OperationTypeString_mutation     OperationTypeString = "mutation"
-	OperationTypeString_query        OperationTypeString = "query"
-	OperationTypeString_subscription OperationTypeString = "subscription"
-)
-
-type RateLimitHeader string
-
-const (
-	RateLimitHeader_x_rateLimit_perSecond RateLimitHeader = "x-rateLimit-perSecond"
-	RateLimitHeader_x_rateLimit_requests  RateLimitHeader = "x-rateLimit-requests"
-	RateLimitHeader_x_rateLimit_uniqueKey RateLimitHeader = "x-rateLimit-uniqueKey"
-)
-
-type RbacHeader string
-
-const (
-	RbacHeader_x_rbac_denyMatchAll    RbacHeader = "x-rbac-denyMatchAll"
-	RbacHeader_x_rbac_denyMatchAny    RbacHeader = "x-rbac-denyMatchAny"
-	RbacHeader_x_rbac_requireMatchAll RbacHeader = "x-rbac-requireMatchAll"
-	RbacHeader_x_rbac_requireMatchAny RbacHeader = "x-rbac-requireMatchAny"
-)
-
-type RequestHeaderKey string
-
-const (
-	RequestHeaderKey_X_Request_Id RequestHeaderKey = "X-Request-Id"
-)
-
-type TransactionHeader string
-
-const (
-	TransactionHeader_X_Transaction_Id       TransactionHeader = "X-Transaction-Id"
-	TransactionHeader_X_Transaction_Manually TransactionHeader = "X-Transaction-Manually"
 )
