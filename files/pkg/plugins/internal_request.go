@@ -2,6 +2,7 @@ package plugins
 
 import (
 	"bytes"
+	"context"
 	"custom-go/pkg/types"
 	"custom-go/pkg/utils"
 	"encoding/json"
@@ -9,8 +10,12 @@ import (
 	"fmt"
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
+	"github.com/tidwall/sjson"
+	"golang.org/x/exp/maps"
 	"io"
+	"mime/multipart"
 	"net/http"
+	"reflect"
 	"strings"
 )
 
@@ -43,27 +48,47 @@ func BuildInternalRequest(logger echo.Logger, operationType types.OperationType)
 }
 
 func internalRequest(url string, clientCtx *types.InternalClientRequestContext, options types.OperationArgsWithInput[any]) (any, error) {
-	jsonData, err := json.Marshal(map[string]interface{}{
-		"input": options.Input,
-		"__wg": map[string]interface{}{
-			"clientRequest": &types.WunderGraphRequest{
-				RequestURI: url,
-				Method:     "POST",
-				Headers:    clientCtx.ClientRequest.Headers,
-			},
-			"user": clientCtx.User,
+	var (
+		bodyBuffer  *bytes.Buffer
+		contentType string
+	)
+	baseBodyWg := &types.BaseRequestBodyWg{
+		ClientRequest: &types.WunderGraphRequest{
+			RequestURI: url,
+			Method:     http.MethodPost,
+			Headers:    clientCtx.ClientRequest.Headers,
 		},
-	})
+		User: clientCtx.User,
+	}
+	formData, ok := options.Context.Value(fileFormDataKey).(fileFormData)
+	if ok {
+		var err error
+		optional := func(writer *multipart.Writer) {
+			inputBytes, _ := json.Marshal(options.Input)
+			for _, key := range maps.Keys(formData) {
+				inputBytes, _ = sjson.DeleteBytes(inputBytes, key)
+			}
+			_ = writer.WriteField("input", string(inputBytes))
+			baseBodyWgBytes, _ := json.Marshal(baseBodyWg)
+			_ = writer.WriteField("__wg", string(baseBodyWgBytes))
+		}
+		if bodyBuffer, contentType, err = buildBodyWithFileFormData(formData, optional); err != nil {
+			return nil, err
+		}
+	} else {
+		jsonData, err := json.Marshal(types.OperationHookPayload{Input: options.Input, Wg: baseBodyWg})
+		if err != nil {
+			return nil, err
+		}
+		bodyBuffer, contentType = bytes.NewBuffer(jsonData), echo.MIMEApplicationJSON
+	}
+
+	req, err := http.NewRequest(http.MethodPost, url, bodyBuffer)
 	if err != nil {
 		return nil, err
 	}
 
-	req, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonData))
-	if err != nil {
-		return nil, err
-	}
-
-	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Content-Type", contentType)
 	for k, v := range clientCtx.ExtraHeaders {
 		req.Header.Set(k, v)
 	}
@@ -94,21 +119,53 @@ func internalRequest(url string, clientCtx *types.InternalClientRequestContext, 
 	return res.Data, nil
 }
 
-func executeInternalRequest[I, OD any](context *types.InternalClientRequestContext, operationDefinitions types.OperationDefinitions, path string, input I) (result OD, err error) {
+func executeInternalRequest[I, OD any](clientCtx *types.InternalClientRequestContext, operationDefinitions types.OperationDefinitions, path string, input I) (result OD, err error) {
 	execFunction := operationDefinitions[path]
 	if nil == execFunction {
 		return result, fmt.Errorf("not find internalRequest with (%s)", path)
 	}
 
 	args := types.OperationArgsWithInput[I]{Input: input}
+	inputValue := reflect.ValueOf(input)
+	if inputValue.Kind() == reflect.Ptr {
+		inputValue = inputValue.Elem()
+	}
+	inputType := inputValue.Type()
+	formData := make(fileFormData)
+	for i := 0; i < inputValue.NumField(); i++ {
+		inputFieldValue := inputValue.Field(i)
+		if !inputFieldValue.IsValid() || !inputFieldValue.CanInterface() || inputFieldValue.IsZero() {
+			continue
+		}
+
+		var files []*types.UploadFile
+		switch v := inputFieldValue.Interface().(type) {
+		case *types.UploadFile:
+			files = []*types.UploadFile{v}
+		case []*types.UploadFile:
+			files = v
+		}
+		if len(files) > 0 {
+			inputFieldTag := inputType.Field(i).Tag.Get("json")
+			formData[inputFieldTag] = files
+		}
+	}
 	options := utils.ConvertType[types.OperationArgsWithInput[I], types.OperationArgsWithInput[any]](&args)
-	execRes, err := execFunction(context, *options)
+	options.Context = context.Background()
+	if len(formData) > 0 {
+		options.Context = context.WithValue(options.Context, fileFormDataKey, formData)
+	}
+	execRes, err := execFunction(clientCtx, *options)
 	if err != nil || execRes == nil {
 		return result, err
 	}
 
 	return *utils.ConvertType[any, OD](&execRes), nil
 }
+
+const fileFormDataKey = "fileFormData"
+
+type fileFormData map[string][]*types.UploadFile
 
 var operations = make(map[types.OperationType][]string)
 

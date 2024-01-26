@@ -20,11 +20,7 @@ type (
 		Directory string
 		Profile   UploadProfile
 		Metadata  UploadMetadata
-		Files     []*UploadFile
-	}
-	UploadFile struct {
-		Reader io.Reader
-		Name   string
+		Files     []*types.UploadFile
 	}
 	UploadClient types.S3UploadConfiguration
 )
@@ -44,25 +40,37 @@ func NewUploadClient(Name string) *UploadClient {
 	return client
 }
 
+func buildBodyWithFileFormData(data fileFormData, optional ...func(*multipart.Writer)) (body *bytes.Buffer, contentType string, err error) {
+	body = new(bytes.Buffer)
+	writer := multipart.NewWriter(body)
+	for field, files := range data {
+		for _, item := range files {
+			var formFile io.Writer
+			if formFile, err = writer.CreateFormFile(field, item.Name); err != nil {
+				return
+			}
+
+			if _, err = io.Copy(formFile, item.Reader); err != nil {
+				return
+			}
+		}
+	}
+	for _, v := range optional {
+		v(writer)
+	}
+	if err = writer.Close(); err != nil {
+		return
+	}
+
+	contentType = writer.FormDataContentType()
+	return
+}
+
 var uploadHttpClient = http.Client{Timeout: 30 * time.Second}
 
 func (u *UploadClient) Upload(parameter *UploadParameter) (uploadResp types.UploadedFiles, err error) {
-	body := new(bytes.Buffer)
-
-	writer := multipart.NewWriter(body)
-	for _, item := range parameter.Files {
-		var formFile io.Writer
-		formFile, err = writer.CreateFormFile("file", item.Name)
-		if err != nil {
-			return
-		}
-
-		if _, err = io.Copy(formFile, item.Reader); err != nil {
-			return
-		}
-	}
-
-	if err = writer.Close(); err != nil {
+	body, contentType, err := buildBodyWithFileFormData(fileFormData{"file": parameter.Files})
+	if err != nil {
 		return
 	}
 
@@ -75,7 +83,7 @@ func (u *UploadClient) Upload(parameter *UploadParameter) (uploadResp types.Uplo
 		return
 	}
 
-	req.Header.Add("Content-Type", writer.FormDataContentType())
+	req.Header.Add("Content-Type", contentType)
 	if len(parameter.Profile) > 0 {
 		req.Header.Add(string(types.InternalHeader_X_Upload_Profile), string(parameter.Profile))
 	}

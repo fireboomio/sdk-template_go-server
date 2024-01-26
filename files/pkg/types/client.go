@@ -1,9 +1,12 @@
 package types
 
+import "context"
+
 type (
 	OperationDefinitions          map[string]InternalRequestFunction
 	OperationArgsWithInput[I any] struct {
-		Input I `json:"input"`
+		Input   I `json:"input"`
+		Context context.Context
 	}
 )
 
