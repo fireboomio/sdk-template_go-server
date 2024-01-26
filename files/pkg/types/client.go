@@ -22,7 +22,13 @@ type (
 )
 
 func (i *InternalClient) WithHeaders(headers map[string]string) *InternalClient {
-	i.Context.ExtraHeaders = headers
+	if len(i.Context.ExtraHeaders) == 0 {
+		i.Context.ExtraHeaders = headers
+	} else {
+		for k, v := range headers {
+			i.Context.ExtraHeaders[k] = v
+		}
+	}
 	return i
 }
 
