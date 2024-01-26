@@ -6,4 +6,5 @@
     {{~#if (equalAny typeFormat ',Decimal,BigInt')}}string{{/if~}}
     {{~#if (equalAny typeFormat 'Date,Time,DateTime,date-time')}}time.Time{{/if~}}
     {{~#equal typeFormat 'Bytes'}}[]byte{{/equal~}}
+    {{~#equal typeFormat 'binary'}}*types.UploadFile{{/equal~}}
 {{/equal~}}

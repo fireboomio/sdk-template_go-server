@@ -3,7 +3,10 @@ package generated
 {{#with typeFormatArray}}
 import (
 {{#each this}}
-    {{#equal this 'DateTime'}}"time"{{/equal}}
+    {{~#equal this 'DateTime'}}
+    "time"{{/equal}}
+    {{~#equal this 'binary'}}
+    "custom-go/pkg/types"{{/equal}}
 {{/each}}
 )
 {{/with}}
