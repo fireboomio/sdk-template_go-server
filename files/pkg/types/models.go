@@ -936,6 +936,7 @@ const (
 type InternalHeader string
 
 const (
+	InternalHeader_X_FB_Trace_Id    InternalHeader = "X-FB-Trace-Id"
 	InternalHeader_X_Metadata       InternalHeader = "X-Metadata"
 	InternalHeader_X_Request_Id     InternalHeader = "X-Request-Id"
 	InternalHeader_X_Upload_Profile InternalHeader = "X-Upload-Profile"
