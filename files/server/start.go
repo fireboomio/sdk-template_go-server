@@ -116,6 +116,7 @@ func configureWunderGraphServer() *echo.Echo {
 				Context:        c,
 				User:           body.Wg.User,
 				InternalClient: internalClient,
+				Headers:        body.Wg.ClientRequest.Headers,
 			}
 			return next(brc)
 		}
