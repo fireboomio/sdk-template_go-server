@@ -24,7 +24,7 @@ func (t *Time) UnmarshalJSON(data []byte) (err error) {
 		*t = Time(time.Time{})
 		return
 	}
-	now, err := time.ParseInLocation(`"`+ISO8601Layout+`"`, string(data), time.Local)
+	now, err := time.ParseInLocation(`"`+ISO8601Layout+`"`, string(data), time.UTC)
 	*t = Time(now)
 	return
 }
