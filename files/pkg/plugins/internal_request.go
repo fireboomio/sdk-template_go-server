@@ -131,7 +131,7 @@ const fileFormDataKey = "fileFormData"
 
 var (
 	operations            = make(map[types.OperationType][]string)
-	DefaultInternalClient = types.NewEmptyInternalClient(nil)
+	DefaultInternalClient = types.NewEmptyInternalClient()
 )
 
 type (

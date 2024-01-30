@@ -16,12 +16,13 @@ type (
 	}
 )
 
-func NewEmptyInternalClient(user *User) *InternalClient {
+func NewEmptyInternalClient() *InternalClient {
 	headerTraceId := string(InternalHeader_X_FB_Trace_Id)
 	return &InternalClient{
 		BaseRequestBodyWg: &BaseRequestBodyWg{
-			ClientRequest: &WunderGraphRequest{Headers: RequestHeaders{headerTraceId: uuid.New().String()}},
-			User:          user,
+			ClientRequest: &WunderGraphRequest{
+				Headers: RequestHeaders{headerTraceId: uuid.New().String()},
+			},
 		},
 	}
 }
