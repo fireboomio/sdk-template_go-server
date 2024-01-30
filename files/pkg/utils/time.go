@@ -20,6 +20,10 @@ func CurrentDateTime() string {
 type Time time.Time
 
 func (t *Time) UnmarshalJSON(data []byte) (err error) {
+	if len(data) == 0 || string(data) == "null" {
+		*t = Time(time.Time{})
+		return
+	}
 	now, err := time.ParseInLocation(`"`+ISO8601Layout+`"`, string(data), time.Local)
 	*t = Time(now)
 	return
