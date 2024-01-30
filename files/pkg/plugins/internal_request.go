@@ -19,50 +19,22 @@ import (
 	"strings"
 )
 
-var DefaultInternalClient *types.InternalClient
-
-func BuildDefaultInternalClient(queries types.OperationDefinitions, mutations types.OperationDefinitions) {
-	DefaultInternalClient = &types.InternalClient{
-		Context: &types.InternalClientRequestContext{
-			BaseRequestBodyWg: &types.BaseRequestBodyWg{
-				ClientRequest: &types.WunderGraphRequest{Headers: map[string]string{}},
-			},
-		},
-		Queries:   queries,
-		Mutations: mutations,
-	}
-	return
-}
-
-func BuildInternalRequest(logger echo.Logger, operationType types.OperationType) types.OperationDefinitions {
-	internalOperations := operations[operationType]
-	result := make(types.OperationDefinitions, len(internalOperations))
-	for _, name := range internalOperations {
-		url := types.PrivateNodeUrl + strings.ReplaceAll(string(types.InternalEndpoint_internalRequest), "{path}", name)
-		logger.Debugf(`Built internalRequest (%s)`, url)
-		result[name] = func(ctx *types.InternalClientRequestContext, options types.OperationArgsWithInput[any]) (any, error) {
-			return internalRequest(url, ctx, options)
-		}
-	}
-	return result
-}
-
-func internalRequest(url string, clientCtx *types.InternalClientRequestContext, options types.OperationArgsWithInput[any]) (any, error) {
+func internalRequest[I, O any](client *types.InternalClient, path string, options types.OperationArgsWithInput[I]) (o O, err error) {
 	var (
 		bodyBuffer  *bytes.Buffer
 		contentType string
 	)
+	url := fetchInternalRequestUrl(path)
 	baseBodyWg := &types.BaseRequestBodyWg{
 		ClientRequest: &types.WunderGraphRequest{
 			RequestURI: url,
 			Method:     http.MethodPost,
-			Headers:    clientCtx.ClientRequest.Headers,
+			Headers:    client.ClientRequest.Headers,
 		},
-		User: clientCtx.User,
+		User: client.User,
 	}
 	formData, ok := options.Context.Value(fileFormDataKey).(fileFormData)
 	if ok {
-		var err error
 		optional := func(writer *multipart.Writer) {
 			inputBytes, _ := json.Marshal(options.Input)
 			for _, key := range maps.Keys(formData) {
@@ -73,59 +45,54 @@ func internalRequest(url string, clientCtx *types.InternalClientRequestContext, 
 			_ = writer.WriteField("__wg", string(baseBodyWgBytes))
 		}
 		if bodyBuffer, contentType, err = buildBodyWithFileFormData(formData, optional); err != nil {
-			return nil, err
+			return
 		}
 	} else {
-		jsonData, err := json.Marshal(types.OperationHookPayload{Input: options.Input, Wg: baseBodyWg})
-		if err != nil {
-			return nil, err
+		var jsonData []byte
+		if jsonData, err = json.Marshal(types.OperationHookPayload{Input: options.Input, Wg: baseBodyWg}); err != nil {
+			return
 		}
 		bodyBuffer, contentType = bytes.NewBuffer(jsonData), echo.MIMEApplicationJSON
 	}
 
 	req, err := http.NewRequest(http.MethodPost, url, bodyBuffer)
 	if err != nil {
-		return nil, err
+		return
 	}
 
 	req.Header.Set("Content-Type", contentType)
-	for k, v := range clientCtx.ExtraHeaders {
+	for k, v := range client.ExtraHeaders {
 		req.Header.Set(k, v)
 	}
 
-	client := &http.Client{}
-	resp, err := client.Do(req)
+	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
-		return nil, err
+		return
 	}
-
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
 		bodyBytes, _ := io.ReadAll(resp.Body)
-		return nil, errors.New(string(bodyBytes))
+		err = errors.New(string(bodyBytes))
+		return
 	}
 
-	var res types.OperationBodyResponse[any]
-	err = json.NewDecoder(resp.Body).Decode(&res)
-	if err != nil {
-		return nil, err
+	var res types.OperationBodyResponse[O]
+	if err = json.NewDecoder(resp.Body).Decode(&res); err != nil {
+		return
 	}
 
 	if len(res.Errors) > 0 {
-		return nil, errors.New(res.Errors[0].Message)
+		err = errors.New(res.Errors[0].Message)
+		return
 	}
 
-	return res.Data, nil
+	o = res.Data
+	return
 }
 
-func executeInternalRequest[I, OD any](clientCtx *types.InternalClientRequestContext, operationDefinitions types.OperationDefinitions, path string, input I) (result OD, err error) {
-	execFunction := operationDefinitions[path]
-	if nil == execFunction {
-		return result, fmt.Errorf("not find internalRequest with (%s)", path)
-	}
-
-	args := types.OperationArgsWithInput[I]{Input: input}
+func executeInternalRequest[I, OD any](client *types.InternalClient, path string, input I) (result OD, err error) {
+	options := types.OperationArgsWithInput[I]{Input: input}
 	inputValue := reflect.ValueOf(input)
 	if inputValue.Kind() == reflect.Ptr {
 		inputValue = inputValue.Elem()
@@ -150,32 +117,44 @@ func executeInternalRequest[I, OD any](clientCtx *types.InternalClientRequestCon
 			formData[inputFieldTag] = files
 		}
 	}
-	options := utils.ConvertType[types.OperationArgsWithInput[I], types.OperationArgsWithInput[any]](&args)
 	options.Context = context.Background()
 	if len(formData) > 0 {
 		options.Context = context.WithValue(options.Context, fileFormDataKey, formData)
 	}
-	execRes, err := execFunction(clientCtx, *options)
-	if err != nil || execRes == nil {
-		return result, err
-	}
-
-	return *utils.ConvertType[any, OD](&execRes), nil
+	return internalRequest[I, OD](client, path, options)
 }
 
 const fileFormDataKey = "fileFormData"
 
-type fileFormData map[string][]*types.UploadFile
+var (
+	operations            = make(map[types.OperationType][]string)
+	DefaultInternalClient = &types.InternalClient{
+		BaseRequestBodyWg: &types.BaseRequestBodyWg{
+			ClientRequest: &types.WunderGraphRequest{Headers: map[string]string{}},
+		},
+	}
+)
 
-var operations = make(map[types.OperationType][]string)
+type (
+	fileFormData   map[string][]*types.UploadFile
+	Meta[I, O any] struct {
+		Path string
+		Type types.OperationType
+	}
+)
 
-type Meta[I, O any] struct {
-	Path string
-	Type types.OperationType
+func FetchOperations(logger echo.Logger, operationType types.OperationType, printUrlRequired bool) []string {
+	paths := operations[operationType]
+	if printUrlRequired {
+		for _, path := range paths {
+			logger.Debugf(`Built internalRequest (%s)`, fetchInternalRequestUrl(path))
+		}
+	}
+	return paths
 }
 
-func FetchSubscriptions() []string {
-	return operations[types.OperationType_SUBSCRIPTION]
+func fetchInternalRequestUrl(path string) string {
+	return types.PrivateNodeUrl + strings.ReplaceAll(string(types.InternalEndpoint_internalRequest), "{path}", path)
 }
 
 func NewOperationMeta[I, O any](path string, operationType types.OperationType) *Meta[I, O] {
@@ -188,13 +167,7 @@ func (m *Meta[I, O]) Execute(input I, client ...*types.InternalClient) (O, error
 	if len(client) > 0 && client[0] != nil {
 		executeClient = client[0]
 	}
-
-	operationDefinitions := executeClient.Queries
-	if m.Type == 1 {
-		operationDefinitions = executeClient.Mutations
-	}
-
-	return executeInternalRequest[I, O](executeClient.Context, operationDefinitions, m.Path, input)
+	return executeInternalRequest[I, O](executeClient, m.Path, input)
 }
 
 func ExecuteWithTransaction(client *types.InternalClient, execute func() error) error {
@@ -208,6 +181,6 @@ func ExecuteWithTransaction(client *types.InternalClient, execute func() error) 
 		body = []byte(fmt.Sprintf(`{"error": "%s"}`, err.Error()))
 	}
 	url := types.PrivateNodeUrl + string(types.InternalEndpoint_internalTransaction)
-	_, err := utils.HttpPost(url, body, client.Context.ExtraHeaders)
+	_, err := utils.HttpPost(url, body, client.ExtraHeaders)
 	return err
 }

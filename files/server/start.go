@@ -7,7 +7,6 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	"github.com/labstack/gommon/log"
-	"golang.org/x/exp/maps"
 	"net"
 	"net/http"
 	"os"
@@ -51,24 +50,23 @@ func configureWunderGraphServer() *echo.Echo {
 	plugins.RegisterAuthHooks(e, plugins.WdgHooksAndServerConfig.Hooks.Authentication)
 	plugins.RegisterUploadsHooks(e, plugins.WdgHooksAndServerConfig.Hooks.Uploads)
 
-	internalQueries := plugins.BuildInternalRequest(e.Logger, types.OperationType_QUERY)
+	internalQueries := plugins.FetchOperations(e.Logger, types.OperationType_QUERY, true)
 	if queryLen := len(internalQueries); queryLen > 0 {
-		plugins.RegisterOperationsHooks(e, maps.Keys(internalQueries), plugins.WdgHooksAndServerConfig.Hooks.Queries)
+		plugins.RegisterOperationsHooks(e, internalQueries, plugins.WdgHooksAndServerConfig.Hooks.Queries)
 		e.Logger.Debugf(`Registered (%d) query operations`, queryLen)
 	}
 
-	internalMutations := plugins.BuildInternalRequest(e.Logger, types.OperationType_MUTATION)
+	internalMutations := plugins.FetchOperations(e.Logger, types.OperationType_MUTATION, true)
 	if mutationLen := len(internalMutations); mutationLen > 0 {
-		plugins.RegisterOperationsHooks(e, maps.Keys(internalMutations), plugins.WdgHooksAndServerConfig.Hooks.Mutations)
+		plugins.RegisterOperationsHooks(e, internalMutations, plugins.WdgHooksAndServerConfig.Hooks.Mutations)
 		e.Logger.Debugf(`Registered (%d) mutation operations`, mutationLen)
 	}
 
-	subscriptionOperations := plugins.FetchSubscriptions()
+	subscriptionOperations := plugins.FetchOperations(e.Logger, types.OperationType_SUBSCRIPTION, false)
 	if subscriptionLen := len(subscriptionOperations); subscriptionLen > 0 {
 		plugins.RegisterOperationsHooks(e, subscriptionOperations, plugins.WdgHooksAndServerConfig.Hooks.Subscriptions)
 		e.Logger.Debugf(`Registered (%d) subscription operations`, subscriptionLen)
 	}
-	plugins.BuildDefaultInternalClient(internalQueries, internalMutations)
 
 	registerOnce := &sync.Once{}
 	e.Use(func(next echo.HandlerFunc) echo.HandlerFunc {
@@ -97,12 +95,6 @@ func configureWunderGraphServer() *echo.Echo {
 					RequestURI: c.Request().RequestURI,
 					Headers:    plugins.HeadersToObject(c.Request().Header),
 				}
-			} else {
-				for name, value := range body.Wg.ClientRequest.Headers {
-					if _, ok := c.Request().Header[name]; !ok {
-						c.Request().Header.Set(name, value)
-					}
-				}
 			}
 			headerRequestIdKey := string(types.InternalHeader_X_Request_Id)
 			headerTraceIdKey := string(types.InternalHeader_X_FB_Trace_Id)
@@ -110,13 +102,9 @@ func configureWunderGraphServer() *echo.Echo {
 				headerRequestIdKey: c.Request().Header.Get(headerRequestIdKey),
 				headerTraceIdKey:   c.Request().Header.Get(headerTraceIdKey),
 			}, body.Wg)
-			internalClient.Queries = internalQueries
-			internalClient.Mutations = internalMutations
 			brc := &types.BaseRequestContext{
 				Context:        c,
-				User:           body.Wg.User,
 				InternalClient: internalClient,
-				Headers:        body.Wg.ClientRequest.Headers,
 			}
 			return next(brc)
 		}

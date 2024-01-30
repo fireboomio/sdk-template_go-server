@@ -53,9 +53,7 @@ type (
 	}
 	BaseRequestContext struct {
 		echo.Context
-		User           *User
-		InternalClient *InternalClient
-		Headers        RequestHeaders
+		*InternalClient
 	}
 	AuthenticationHookRequest = BaseRequestContext
 	HookRequest               = BaseRequestContext
