@@ -20,6 +20,9 @@ import (
 )
 
 func internalRequest[I, O any](client *types.InternalClient, path string, options types.OperationArgsWithInput[I]) (o O, err error) {
+	if client == nil {
+		client = DefaultInternalClient
+	}
 	var (
 		bodyBuffer  *bytes.Buffer
 		contentType string
@@ -158,12 +161,8 @@ func NewOperationMeta[I, O any](path string, operationType types.OperationType) 
 	return &Meta[I, O]{Path: path, Type: operationType}
 }
 
-func (m *Meta[I, O]) Execute(input I, client ...*types.InternalClient) (O, error) {
-	executeClient := DefaultInternalClient
-	if len(client) > 0 && client[0] != nil {
-		executeClient = client[0]
-	}
-	return executeInternalRequest[I, O](executeClient, m.Path, input)
+func (m *Meta[I, O]) Execute(input I, client *types.InternalClient) (O, error) {
+	return executeInternalRequest[I, O](client, m.Path, input)
 }
 
 func ExecuteWithTransaction(client *types.InternalClient, execute func() error) error {
