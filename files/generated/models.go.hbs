@@ -4,7 +4,7 @@ package generated
 import (
 {{#each this}}
     {{~#equal this 'DateTime'}}
-    "time"{{/equal}}
+    "custom-go/pkg/utils"{{/equal}}
     {{~#equal this 'binary'}}
     "custom-go/pkg/types"{{/equal}}
 {{/each}}
