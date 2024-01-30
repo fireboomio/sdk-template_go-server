@@ -87,7 +87,7 @@ func requestContext(c echo.Context) (result *types.HookRequest, err error) {
 		if cycleCounter > maximumRecursionLimit {
 			return result, fmt.Errorf("maximum recursion limit reached (%d)", maximumRecursionLimit)
 		}
-		result.InternalClient = result.InternalClient.WithHeaders(map[string]string{"Wg-Cycle-Counter": strconv.Itoa(cycleCounter)})
+		result.InternalClient = result.InternalClient.WithHeaders(types.RequestHeaders{"Wg-Cycle-Counter": strconv.Itoa(cycleCounter)})
 	}
 	return result, nil
 }
@@ -154,8 +154,8 @@ func buildOperationHook(operationName string, hookName types.MiddlewareHook, hoo
 	}
 }
 
-func HeadersToObject(headers http.Header) map[string]string {
-	obj := make(map[string]string)
+func HeadersToObject(headers http.Header) types.RequestHeaders {
+	obj := make(types.RequestHeaders)
 	for key, values := range headers {
 		if len(values) > 0 {
 			obj[key] = values[0]

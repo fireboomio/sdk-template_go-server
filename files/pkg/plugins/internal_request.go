@@ -130,7 +130,7 @@ var (
 	operations            = make(map[types.OperationType][]string)
 	DefaultInternalClient = &types.InternalClient{
 		BaseRequestBodyWg: &types.BaseRequestBodyWg{
-			ClientRequest: &types.WunderGraphRequest{Headers: map[string]string{}},
+			ClientRequest: &types.WunderGraphRequest{Headers: types.RequestHeaders{}},
 		},
 	}
 )

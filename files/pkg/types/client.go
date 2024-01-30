@@ -8,12 +8,12 @@ type (
 		Context context.Context
 	}
 	InternalClient struct {
-		ExtraHeaders map[string]string
+		ExtraHeaders RequestHeaders
 		*BaseRequestBodyWg
 	}
 )
 
-func (i *InternalClient) WithHeaders(headers map[string]string) *InternalClient {
+func (i *InternalClient) WithHeaders(headers RequestHeaders) *InternalClient {
 	if len(i.ExtraHeaders) == 0 {
 		i.ExtraHeaders = headers
 	} else {
@@ -24,7 +24,7 @@ func (i *InternalClient) WithHeaders(headers map[string]string) *InternalClient 
 	return i
 }
 
-func InternalClientFactoryCall(headers map[string]string, wg *BaseRequestBodyWg) *InternalClient {
+func InternalClientFactoryCall(headers RequestHeaders, wg *BaseRequestBodyWg) *InternalClient {
 	client := &InternalClient{
 		BaseRequestBodyWg: wg,
 		ExtraHeaders:      headers,

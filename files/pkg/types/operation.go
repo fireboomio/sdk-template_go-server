@@ -6,7 +6,7 @@ type (
 		Hook                    MiddlewareHook            `json:"hook,omitempty"`
 		Input                   I                         `json:"input,omitempty"`
 		Response                *OperationBodyResponse[O] `json:"response"`
-		SetClientRequestHeaders map[string]string         `json:"setClientRequestHeaders,omitempty"`
+		SetClientRequestHeaders RequestHeaders            `json:"setClientRequestHeaders,omitempty"`
 	}
 	OperationBodyResponse[O any] struct {
 		DataAny any            `json:"dataAny,omitempty"`
