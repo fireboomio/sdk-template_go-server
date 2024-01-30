@@ -13,6 +13,15 @@ type (
 	}
 )
 
+func NewEmptyInternalClient(user *User) *InternalClient {
+	return &InternalClient{
+		BaseRequestBodyWg: &BaseRequestBodyWg{
+			ClientRequest: &WunderGraphRequest{Headers: RequestHeaders{}},
+			User:          user,
+		},
+	}
+}
+
 func (i *InternalClient) WithHeaders(headers RequestHeaders) *InternalClient {
 	if len(i.ExtraHeaders) == 0 {
 		i.ExtraHeaders = headers
