@@ -21,8 +21,7 @@ import (
 
 func internalRequest[I, O any](client *types.InternalClient, path string, options types.OperationArgsWithInput[I]) (o O, err error) {
 	if client == nil {
-		err = errors.New("internal client is nil")
-		return
+		client = defaultInternalClient
 	}
 	var (
 		bodyBuffer  *bytes.Buffer
@@ -130,7 +129,10 @@ func executeInternalRequest[I, OD any](client *types.InternalClient, path string
 
 const fileFormDataKey = "fileFormData"
 
-var operations = make(map[types.OperationType][]string)
+var (
+	operations            = make(map[types.OperationType][]string)
+	defaultInternalClient = types.NewEmptyInternalClient()
+)
 
 type (
 	fileFormData   map[string][]*types.UploadFile
