@@ -1,6 +1,9 @@
 package types
 
-import "context"
+import (
+	"context"
+	"github.com/google/uuid"
+)
 
 type (
 	OperationArgsWithInput[I any] struct {
@@ -14,9 +17,10 @@ type (
 )
 
 func NewEmptyInternalClient(user *User) *InternalClient {
+	headerTraceId := string(InternalHeader_X_FB_Trace_Id)
 	return &InternalClient{
 		BaseRequestBodyWg: &BaseRequestBodyWg{
-			ClientRequest: &WunderGraphRequest{Headers: RequestHeaders{}},
+			ClientRequest: &WunderGraphRequest{Headers: RequestHeaders{headerTraceId: uuid.New().String()}},
 			User:          user,
 		},
 	}
