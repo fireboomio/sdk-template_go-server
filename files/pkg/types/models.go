@@ -1,7 +1,7 @@
 package types
 
 import (
-	"custom-go/pkg/utils"
+	"time"
 )
 
 type ApiAuthenticationConfig struct {
@@ -281,10 +281,10 @@ type Health struct {
 }
 
 type HealthReport struct {
-	Customizes []string   `json:"customizes"`
-	Functions  []string   `json:"functions"`
-	Proxys     []string   `json:"proxys"`
-	Time       utils.Time `json:"time"`
+	Customizes []string  `json:"customizes"`
+	Functions  []string  `json:"functions"`
+	Proxys     []string  `json:"proxys"`
+	Time       time.Time `json:"time"`
 }
 
 type HookFile struct {
