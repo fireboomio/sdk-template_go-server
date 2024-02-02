@@ -280,7 +280,7 @@ func handleSSE(c *types.BaseRequestContext, sseChan *GraphqlResultChan) error {
 			buf.Reset()
 			errString, _ := sjson.Set("{}", "message", string(errBytes))
 			_ = writeGraphqlResponse(nil, []byte(errString), buf)
-			_, _ = fmt.Fprintf(c.Response().Writer, "errors: %s\n\n", buf.String())
+			_, _ = c.Response().Write(buf.Bytes())
 			flusher.Flush()
 			closeFunc()
 			return nil
@@ -368,7 +368,7 @@ func HandleSSEReader(eventStream io.ReadCloser, grc *GraphqlRequestContext, hand
 						if nil != handle {
 							afterData, done, handleErr := handle(data, false)
 							if handleErr != nil {
-								sseChan.Error <- []byte(internalError)
+								sseChan.Error <- []byte(handleErr.Error())
 								return
 							}
 							if done {
