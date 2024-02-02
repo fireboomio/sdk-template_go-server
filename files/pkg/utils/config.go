@@ -8,6 +8,8 @@ import (
 	"time"
 )
 
+const ISO8601Layout = time.RFC3339
+
 func GetConfigurationVal(val *wgpb.ConfigurationVariable) (result string) {
 	if val == nil {
 		return
@@ -41,5 +43,5 @@ func ReplacePlaceholder(jsonStr, str string) string {
 }
 
 func CurrentDateTime() string {
-	return time.Now().Format(time.RFC3339)
+	return time.Now().Format(ISO8601Layout)
 }
