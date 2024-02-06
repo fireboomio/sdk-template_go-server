@@ -7,9 +7,9 @@ import (
 	"custom-go/pkg/types"
 	"custom-go/pkg/utils"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"github.com/graphql-go/graphql/language/ast"
+	"github.com/r3labs/sse/v2"
 	"github.com/tidwall/gjson"
 	"github.com/tidwall/sjson"
 	"io"
@@ -20,11 +20,9 @@ import (
 	"runtime"
 	"strings"
 
-	"github.com/buger/jsonparser"
 	graphql "github.com/graphql-go/graphql"
 	"github.com/graphql-go/graphql/gqlerrors"
 	"github.com/labstack/echo/v4"
-	"github.com/r3labs/sse/v2"
 	"github.com/wundergraph/graphql-go-tools/pkg/pool"
 )
 
@@ -42,11 +40,8 @@ var (
 )
 
 var (
-	internalError     = "internal error"
-	headerData        = []byte("data:")
-	headerEvent       = []byte("event:")
-	eventTypeComplete = []byte("complete")
-	eventTypeNext     = []byte("next")
+	internalError = "internal error"
+	headerData    = []byte("data:")
 )
 
 const (
@@ -156,12 +151,12 @@ func RegisterGraphql(schema *graphql.Schema) {
 
 			if hasSubscriptionFieldResolveFn && strings.HasPrefix(body.Query, "subscription") {
 				result := graphql.Subscribe(param)
-				return handleSSEFromChan(brc, result)
+				return handleSSEForNormalizeSubscription(brc, result)
 			}
 
 			result := graphql.Do(param)
 			if grc.Result != nil {
-				return handleSSE(brc, grc.Result)
+				return handleSSEForCustomSubscription(brc, grc.Result)
 			}
 
 			return c.JSON(http.StatusOK, result)
@@ -202,7 +197,7 @@ func RegisterGraphql(schema *graphql.Schema) {
 	})
 }
 
-func handleSSEFromChan(c *types.BaseRequestContext, resultChan chan *graphql.Result) error {
+func handleSSEForNormalizeSubscription(c *types.BaseRequestContext, resultChan chan *graphql.Result) error {
 	flusher, ok := c.Response().Writer.(http.Flusher)
 	if !ok {
 		return fmt.Errorf("streaming unsupported")
@@ -227,7 +222,7 @@ func handleSSEFromChan(c *types.BaseRequestContext, resultChan chan *graphql.Res
 				return result.Errors[0]
 			}
 
-			bytes, err := json.Marshal(result.Data)
+			dataBytes, err := json.Marshal(result.Data)
 			if err != nil {
 				fmt.Println("JSON 序列化失败：", err)
 				close(resultChan)
@@ -235,14 +230,14 @@ func handleSSEFromChan(c *types.BaseRequestContext, resultChan chan *graphql.Res
 			}
 			buf := pool.BytesBuffer.Get()
 			buf.Reset()
-			_ = writeGraphqlResponse(bytes, nil, buf)
+			_ = writeGraphqlResponse(dataBytes, nil, buf)
 			_, _ = fmt.Fprintf(c.Response().Writer, "data: %s\n\n", buf.String())
 			flusher.Flush()
 		}
 	}
 }
 
-func handleSSE(c *types.BaseRequestContext, sseChan *GraphqlResultChan) error {
+func handleSSEForCustomSubscription(c *types.BaseRequestContext, sseChan *GraphqlResultChan) error {
 	flusher, ok := c.Response().Writer.(http.Flusher)
 	if !ok {
 		return fmt.Errorf("streaming unsupported")
@@ -293,33 +288,7 @@ func handleSSE(c *types.BaseRequestContext, sseChan *GraphqlResultChan) error {
 	}
 }
 
-func buildEchoGraphqlError(c echo.Context, err error) error {
-	c.Logger().Error(err)
-	return c.JSON(http.StatusInternalServerError, graphql.Result{
-		Errors: []gqlerrors.FormattedError{{Message: err.Error()}},
-	})
-}
-
-func GetGraphqlContext(params graphql.ResolveParams) *GraphqlRequestContext {
-	return params.Context.(*GraphqlRequestContext)
-}
-
-func ResolveArgs[T any](params graphql.ResolveParams) (grc *GraphqlRequestContext, args *T, err error) {
-	grc = GetGraphqlContext(params)
-	err = ResolveParamsToStruct(params, &args)
-	return
-}
-
-func ResolveParamsToStruct(params graphql.ResolveParams, input any) error {
-	argsBytes, err := json.Marshal(params.Args)
-	if err != nil {
-		return err
-	}
-
-	return json.Unmarshal(argsBytes, &input)
-}
-
-func HandleSSEReader(eventStream io.ReadCloser, grc *GraphqlRequestContext, handle func([]byte, bool) ([]byte, bool, error)) {
+func HandleSSEReaderForCustomSubscription(eventStream io.ReadCloser, grc *GraphqlRequestContext, handle func([]byte, bool) ([]byte, bool, error)) {
 	grc.Result = &GraphqlResultChan{
 		Data:  make(chan []byte),
 		Error: make(chan []byte),
@@ -382,59 +351,8 @@ func HandleSSEReader(eventStream io.ReadCloser, grc *GraphqlRequestContext, hand
 							data = afterData
 						}
 						sseChan.Data <- data
-					case bytes.HasPrefix(line, headerEvent):
-						event := trim(line[len(headerEvent):])
-
-						switch {
-						case bytes.Equal(event, eventTypeComplete):
-							return
-						case bytes.Equal(event, eventTypeNext):
-							continue
-						}
-					case bytes.HasPrefix(msg, []byte(":")):
-						// according to the spec, we ignore messages starting with a colon
-						continue
 					default:
-						// ideally we should not get here, or if we do, we should ignore it
-						// but some providers send a json object with the error messages, without the event header
-
-						// check for errors which came without event header
-						data := trim(line)
-
-						val, valueType, _, err := jsonparser.Get(data, "errors")
-						switch err {
-						case jsonparser.KeyPathNotFoundError:
-							continue
-						case jsonparser.MalformedJsonError:
-							// ignore garbage
-							continue
-						case nil:
-							if valueType == jsonparser.Array {
-								response := []byte(`{}`)
-								response, err = jsonparser.Set(response, val, "errors")
-								if err != nil {
-									sseChan.Error <- []byte(err.Error())
-									return
-								}
-
-								sseChan.Error <- response
-								return
-							} else if valueType == jsonparser.Object {
-								response := []byte(`{"errors":[]}`)
-								response, err = jsonparser.Set(response, val, "errors", "[0]")
-								if err != nil {
-									sseChan.Error <- []byte(err.Error())
-									return
-								}
-
-								sseChan.Error <- response
-								return
-							}
-
-						default:
-							sseChan.Error <- []byte(internalError)
-							return
-						}
+						continue
 					}
 				}
 			}
@@ -442,108 +360,97 @@ func HandleSSEReader(eventStream io.ReadCloser, grc *GraphqlRequestContext, hand
 	}()
 }
 
-func HandleSSEReaderForGraphql(eventStream io.ReadCloser, handle func([]byte) ([]byte, bool)) chan graphql.Result {
+func HandleSSEReaderForNormalizeSubscription(eventStream io.ReadCloser, grc *GraphqlRequestContext, handle func([]byte, bool) ([]byte, bool, error)) chan graphql.Result {
 	sseChan := make(chan graphql.Result)
 
 	go func() {
-		defer eventStream.Close()
+		defer func() { _ = eventStream.Close() }()
 		reader := sse.NewEventStreamReader(eventStream, math.MaxInt)
 		for {
-			msg, err := reader.ReadEvent()
-			if err != nil {
-				if err == io.EOF {
+			select {
+			case <-grc.Context.Done():
+				if nil != handle {
+					_, _, _ = handle(nil, true)
+				}
+				return
+			default:
+				msg, err := reader.ReadEvent()
+				if err != nil {
+					if err == io.EOF {
+						return
+					}
+
+					sseChan <- graphql.Result{Errors: []gqlerrors.FormattedError{{Message: internalError}}}
 					return
 				}
 
-				sseChan <- graphql.Result{Errors: []gqlerrors.FormattedError{{Message: internalError}}}
-				return
-			}
+				if len(msg) == 0 {
+					continue
+				}
 
-			if len(msg) == 0 {
-				continue
-			}
+				// normalize the crlf to lf to make it easier to split the lines.
+				// split the line by "\n" or "\r", per the spec.
+				lines := bytes.FieldsFunc(msg, func(r rune) bool { return r == '\n' || r == '\r' })
+				for _, line := range lines {
+					switch {
+					case bytes.HasPrefix(line, headerData):
+						data := trim(line[len(headerData):])
 
-			// normalize the crlf to lf to make it easier to split the lines.
-			// split the line by "\n" or "\r", per the spec.
-			lines := bytes.FieldsFunc(msg, func(r rune) bool { return r == '\n' || r == '\r' })
-			for _, line := range lines {
-				switch {
-				case bytes.HasPrefix(line, headerData):
-					data := trim(line[len(headerData):])
-
-					if len(data) == 0 {
-						continue
-					}
-
-					if nil != handle {
-						afterData, done := handle(data)
-						if done {
-							return
-						}
-						if len(afterData) == 0 {
+						if len(data) == 0 {
 							continue
 						}
-						data = afterData
-					}
-					sseChan <- graphql.Result{Data: data}
-				case bytes.HasPrefix(line, headerEvent):
-					event := trim(line[len(headerEvent):])
 
-					switch {
-					case bytes.Equal(event, eventTypeComplete):
-						return
-					case bytes.Equal(event, eventTypeNext):
-						continue
-					}
-				case bytes.HasPrefix(msg, []byte(":")):
-					// according to the spec, we ignore messages starting with a colon
-					continue
-				default:
-					// ideally we should not get here, or if we do, we should ignore it
-					// but some providers send a json object with the error messages, without the event header
-
-					// check for errors which came without event header
-					data := trim(line)
-
-					val, valueType, _, err := jsonparser.Get(data, "errors")
-					switch {
-					case errors.Is(err, jsonparser.KeyPathNotFoundError):
-						continue
-					case errors.Is(err, jsonparser.MalformedJsonError):
-						// ignore garbage
-						continue
-					case err == nil:
-						if valueType == jsonparser.Array {
-							response := []byte(`{}`)
-							response, err = jsonparser.Set(response, val, "errors")
-							if err != nil {
-								sseChan <- graphql.Result{Errors: []gqlerrors.FormattedError{{Message: err.Error()}}}
+						if nil != handle {
+							afterData, done, handleErr := handle(data, false)
+							if handleErr != nil {
+								sseChan <- graphql.Result{Errors: []gqlerrors.FormattedError{{Message: handleErr.Error()}}}
 								return
 							}
-
-							sseChan <- graphql.Result{Errors: []gqlerrors.FormattedError{{Message: string(response)}}}
-							return
-						} else if valueType == jsonparser.Object {
-							response := []byte(`{"errors":[]}`)
-							response, err = jsonparser.Set(response, val, "errors", "[0]")
-							if err != nil {
-								sseChan <- graphql.Result{Errors: []gqlerrors.FormattedError{{Message: err.Error()}}}
+							if done {
+								sseChan <- graphql.Result{Data: data}
+								sseChan <- graphql.Result{Extensions: map[string]interface{}{"DONE": afterData}}
 								return
 							}
-
-							sseChan <- graphql.Result{Errors: []gqlerrors.FormattedError{{Message: string(response)}}}
-							return
+							if len(afterData) == 0 {
+								continue
+							}
+							data = afterData
 						}
+						sseChan <- graphql.Result{Data: data}
 					default:
-						sseChan <- graphql.Result{Errors: []gqlerrors.FormattedError{{Message: internalError}}}
-						return
+						continue
 					}
 				}
 			}
 		}
 	}()
-
 	return sseChan
+}
+
+func buildEchoGraphqlError(c echo.Context, err error) error {
+	c.Logger().Error(err)
+	return c.JSON(http.StatusInternalServerError, graphql.Result{
+		Errors: []gqlerrors.FormattedError{{Message: err.Error()}},
+	})
+}
+
+func GetGraphqlContext(params graphql.ResolveParams) *GraphqlRequestContext {
+	return params.Context.(*GraphqlRequestContext)
+}
+
+func ResolveArgs[T any](params graphql.ResolveParams) (grc *GraphqlRequestContext, args *T, err error) {
+	grc = GetGraphqlContext(params)
+	err = ResolveParamsToStruct(params, &args)
+	return
+}
+
+func ResolveParamsToStruct(params graphql.ResolveParams, input any) error {
+	argsBytes, err := json.Marshal(params.Args)
+	if err != nil {
+		return err
+	}
+
+	return json.Unmarshal(argsBytes, &input)
 }
 
 func trim(data []byte) []byte {
