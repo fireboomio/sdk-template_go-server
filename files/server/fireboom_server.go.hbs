@@ -85,6 +85,15 @@ func init() {
                 },
         {{/each}}
             },
+            Subscriptions: base.OperationHooks{
+        {{#each subscriptions as |hooks operationName|}}
+                "{{operationName}}": {
+            {{#each hooks}}
+                    {{upperFirst this}}: plugins.ConvertBodyFunc[generated.{{replaceSpecial (upperFirst operationName) "__"}}InternalInput, generated.{{replaceSpecial (upperFirst operationName) "__"}}ResponseData](operation_{{replaceSpecial operationName "__"}}.{{upperFirst this}}),
+            {{/each}}
+                },
+        {{/each}}
+            },
         {{#if s3Providers}}
             Uploads: map[string]plugins.UploadHooks{
             {{#each s3Providers}}

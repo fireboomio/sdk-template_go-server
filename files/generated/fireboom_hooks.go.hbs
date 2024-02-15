@@ -12,7 +12,7 @@ type (
     {{~else if (equalAny engine 2)}}
     {{~else}}
     {{upperFirst name}}Body = *base.OperationBody[{{upperFirst name}}InternalInput, {{upperFirst name}}ResponseData]
-    {{/if~}}
+    {{~/if}}
 {{/each}}
 )
 
