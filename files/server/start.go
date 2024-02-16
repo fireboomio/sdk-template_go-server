@@ -4,7 +4,6 @@ import (
 	"custom-go/pkg/plugins"
 	"custom-go/pkg/types"
 	"custom-go/pkg/utils"
-	"errors"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	"github.com/labstack/gommon/log"
@@ -70,7 +69,7 @@ func configureWunderGraphServer() *echo.Echo {
 	}
 
 	registerOnce := &sync.Once{}
-	e.Use(recoverMiddleware, func(next echo.HandlerFunc) echo.HandlerFunc {
+	e.Use(middleware.Recover(), func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
 			registerOnce.Do(func() {
 				for _, registeredHook := range types.GetRegisteredHookArr() {
@@ -164,22 +163,4 @@ func startServer() error {
 	}
 
 	return nil
-}
-
-func recoverMiddleware(next echo.HandlerFunc) echo.HandlerFunc {
-	return func(c echo.Context) (err error) {
-		defer func() {
-			if e := recover(); e != nil {
-				switch t := e.(type) {
-				case string:
-					err = errors.New(t)
-				case error:
-					err = t
-				default:
-					err = errors.New("unknown error")
-				}
-			}
-		}()
-		return next(c)
-	}
 }
