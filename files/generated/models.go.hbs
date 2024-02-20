@@ -7,6 +7,8 @@ import (
     "time"{{/equal}}
     {{~#equal this 'binary'}}
     "custom-go/pkg/types"{{/equal}}
+    {{~#equal this 'Decimal'}}
+    "github.com/shopspring/decimal"{{/equal}}
 {{/each}}
 )
 {{/with}}
