@@ -123,10 +123,13 @@ func configureWunderGraphServer() *echo.Echo {
 		}
 		return context.Background()
 	}
+	workdir, _ := os.Getwd()
 	// 健康检查
 	e.GET(string(types.Endpoint_health), func(c echo.Context) error {
 		return c.JSON(http.StatusOK, types.Health{
-			Status: "ok", Report: &healthReport.HealthReport,
+			Status:  "ok",
+			Report:  &healthReport.HealthReport,
+			Workdir: workdir,
 		})
 	})
 

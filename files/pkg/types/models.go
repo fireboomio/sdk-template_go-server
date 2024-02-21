@@ -276,8 +276,9 @@ type HTTPHeader struct {
 }
 
 type Health struct {
-	Report *HealthReport `json:"report"`
-	Status string        `json:"status"`
+	Report  *HealthReport `json:"report"`
+	Status  string        `json:"status"`
+	Workdir string        `json:"workdir,omitempty"`
 }
 
 type HealthReport struct {
