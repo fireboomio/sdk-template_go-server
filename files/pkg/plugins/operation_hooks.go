@@ -28,6 +28,9 @@ func ConvertBodyFunc[I, O any](oldFunc func(*types.HookRequest, *types.Operation
 }
 
 func RegisterOperationsHooks(e *echo.Echo, operations []string, operationHooksMap types.OperationHooks) {
+	if len(operationHooksMap) == 0 {
+		return
+	}
 	for _, operationPath := range operations {
 		registerOperationHooks(e, operationPath, operationHooksMap)
 	}
