@@ -39,6 +39,9 @@ func ConvertBodyFunc[I, O any](oldFunc func(*base.HookRequest, *base.OperationBo
 }
 
 func RegisterOperationsHooks(e *echo.Echo, operations []string, operationHooksMap base.OperationHooks) {
+	if len(operationHooksMap) == 0 {
+		return
+	}
 	for _, operationPath := range operations {
 		registerOperationHooks(e, operationPath, operationHooksMap)
 	}
