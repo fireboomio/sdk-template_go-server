@@ -117,5 +117,6 @@ func (u *UploadClient) GetOssUrl(key string) string {
 	if u.UseSSL {
 		ssl = "s"
 	}
-	return fmt.Sprintf("http%s://%s.%s/%s", ssl, u.BucketName, u.Endpoint, key)
+	bucketName, endpoint := types.GetConfigurationVal(u.BucketName), types.GetConfigurationVal(u.Endpoint)
+	return fmt.Sprintf("http%s://%s.%s/%s", ssl, bucketName, endpoint, key)
 }
