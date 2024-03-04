@@ -2,6 +2,7 @@ package types
 
 type (
 	OperationBody[I, O any] struct {
+		Canceled                bool                      `json:"canceled"`
 		Op                      string                    `json:"op,omitempty"`
 		Hook                    MiddlewareHook            `json:"hook,omitempty"`
 		Input                   I                         `json:"input,omitempty"`

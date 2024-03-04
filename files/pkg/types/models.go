@@ -457,6 +457,7 @@ type OperationCacheConfig struct {
 }
 
 type OperationHookPayload struct {
+	Canceled                bool                          `json:"canceled"`
 	Wg                      *BaseRequestBodyWg            `json:"__wg"`
 	Hook                    MiddlewareHook                `json:"hook"`
 	Input                   any                           `json:"input"`
