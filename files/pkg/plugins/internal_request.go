@@ -9,17 +9,20 @@ import (
 	"errors"
 	"fmt"
 	"github.com/google/uuid"
+	"github.com/graphql-go/graphql/gqlerrors"
 	"github.com/labstack/echo/v4"
+	"github.com/r3labs/sse/v2"
 	"github.com/tidwall/sjson"
 	"golang.org/x/exp/maps"
 	"io"
+	"math"
 	"mime/multipart"
 	"net/http"
 	"reflect"
 	"strings"
 )
 
-func internalRequest[I, O any](client *types.InternalClient, path string, options types.OperationArgsWithInput[I]) (o O, err error) {
+func internalRequest[I any](client *types.InternalClient, path string, options types.OperationArgsWithInput[I]) (resp *http.Response, err error) {
 	if client == nil {
 		client = defaultInternalClient
 	}
@@ -68,11 +71,10 @@ func internalRequest[I, O any](client *types.InternalClient, path string, option
 		req.Header.Set(k, v)
 	}
 
-	resp, err := http.DefaultClient.Do(req)
+	resp, err = http.DefaultClient.Do(req)
 	if err != nil {
 		return
 	}
-	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
 		bodyBytes, _ := io.ReadAll(resp.Body)
@@ -80,17 +82,6 @@ func internalRequest[I, O any](client *types.InternalClient, path string, option
 		return
 	}
 
-	var res types.OperationBodyResponse[O]
-	if err = json.NewDecoder(resp.Body).Decode(&res); err != nil {
-		return
-	}
-
-	if len(res.Errors) > 0 {
-		err = errors.New(res.Errors[0].Message)
-		return
-	}
-
-	o = res.Data
 	return
 }
 
@@ -124,7 +115,25 @@ func executeInternalRequest[I, OD any](client *types.InternalClient, path string
 	if len(formData) > 0 {
 		options.Context = context.WithValue(options.Context, fileFormDataKey, formData)
 	}
-	return internalRequest[I, OD](client, path, options)
+
+	resp, err := internalRequest[I](client, path, options)
+	if err != nil {
+		return
+	}
+	defer func() { _ = resp.Body.Close() }()
+
+	var operationResp types.OperationBodyResponse[OD]
+	if err = json.NewDecoder(resp.Body).Decode(&operationResp); err != nil {
+		return
+	}
+
+	if len(operationResp.Errors) > 0 {
+		err = errors.New(operationResp.Errors[0].Message)
+		return
+	}
+
+	result = operationResp.Data
+	return
 }
 
 const fileFormDataKey = "fileFormData"
@@ -139,6 +148,13 @@ type (
 	Meta[I, O any] struct {
 		Path string
 		Type types.OperationType
+	}
+	Subscriber[I, O any] struct {
+		Path string
+	}
+	SubscriberData[O any] struct {
+		Data   O
+		Errors []gqlerrors.FormattedError
 	}
 )
 
@@ -163,6 +179,59 @@ func NewOperationMeta[I, O any](path string, operationType types.OperationType) 
 
 func (m *Meta[I, O]) Execute(input I, client *types.InternalClient) (O, error) {
 	return executeInternalRequest[I, O](client, m.Path, input)
+}
+
+func NewOperationSubscriber[I, O any](path string) *Subscriber[I, O] {
+	operations[types.OperationType_SUBSCRIPTION] = append(operations[types.OperationType_SUBSCRIPTION], path)
+	return &Subscriber[I, O]{Path: path}
+}
+
+func (m *Subscriber[I, O]) Subscribe(input I, client *types.InternalClient) (dataChan chan SubscriberData[O], err error) {
+	options := types.OperationArgsWithInput[I]{Input: input, Context: context.Background()}
+	resp, err := internalRequest[I](client, m.Path, options)
+	if err != nil {
+		return
+	}
+
+	dataChan = make(chan SubscriberData[O])
+	go func() {
+		defer func() { _ = resp.Body.Close() }()
+		reader := sse.NewEventStreamReader(resp.Body, math.MaxInt)
+		var (
+			readMsg, lineData []byte
+			data              O
+		)
+		for {
+			if readMsg, err = reader.ReadEvent(); err != nil {
+				if err == io.EOF {
+					return
+				}
+
+				dataChan <- SubscriberData[O]{Errors: []gqlerrors.FormattedError{{Message: internalError}}}
+				return
+			}
+			if len(readMsg) == 0 {
+				continue
+			}
+
+			// normalize the crlf to lf to make it easier to split the lines.
+			// split the line by "\n" or "\r", per the spec.
+			lines := bytes.FieldsFunc(readMsg, func(r rune) bool { return r == '\n' || r == '\r' })
+			for _, line := range lines {
+				if bytes.HasPrefix(line, headerData) {
+					if lineData = trim(line[len(headerData):]); len(lineData) == 0 {
+						continue
+					}
+					if err = json.Unmarshal(lineData, &data); err != nil {
+						dataChan <- SubscriberData[O]{Errors: []gqlerrors.FormattedError{{Message: internalError}}}
+						return
+					}
+					dataChan <- SubscriberData[O]{Data: data}
+				}
+			}
+		}
+	}()
+	return
 }
 
 func ExecuteWithTransaction(client *types.InternalClient, execute func() error) error {

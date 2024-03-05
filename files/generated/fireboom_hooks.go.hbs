@@ -8,14 +8,14 @@ import (
 var (
 {{#each operations}}
     {{#if (equalAny engine '0,1')}}
-    {{upperFirst name}} = plugins.NewOperationMeta[{{upperFirst name}}{{#equal engine 0}}Internal{{/equal}}Input, {{upperFirst name}}ResponseData]("{{path}}", {{type}})
+    {{upperFirst name}} = plugins.NewOperation{{#if isSubscription}}Subscriber{{else}}Meta{{/if}}[{{upperFirst name}}{{#equal engine 0}}Internal{{/equal}}Input, {{upperFirst name}}ResponseData]("{{path}}", {{type}})
     {{/if~}}
 {{/each}}
 )
 
 type (
 {{#each operations}}
-    {{#if (isAllTrue (invertBool isSubscription) (equalAny engine '0,1'))}}
+    {{#if (equalAny engine '0,1')}}
     {{upperFirst name}}Body = *types.OperationBody[{{upperFirst name}}{{#equal engine 0}}Internal{{/equal}}Input, {{upperFirst name}}ResponseData]
     {{/if~}}
 {{/each}}
