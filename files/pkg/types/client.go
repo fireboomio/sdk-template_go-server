@@ -2,7 +2,10 @@ package types
 
 import (
 	"context"
+	"fmt"
 	"github.com/google/uuid"
+	"math/rand"
+	"time"
 )
 
 type (
@@ -16,13 +19,18 @@ type (
 	}
 )
 
+var randSource = rand.NewSource(time.Now().UnixNano())
+
 func NewEmptyInternalClient() *InternalClient {
+	randNumber := randSource.Int63()
+	uberTraceId := fmt.Sprintf("%016x:%016x:%016x:%x", randNumber, randNumber, 0, 1)
 	return &InternalClient{
 		BaseRequestBodyWg: &BaseRequestBodyWg{
 			ClientRequest: &WunderGraphRequest{Headers: RequestHeaders{}},
 		},
 		ExtraHeaders: RequestHeaders{
-			string(InternalHeader_X_Request_Id): uuid.New().String(),
+			string(InternalHeader_X_Request_Id):    uuid.New().String(),
+			string(InternalHeader_X_uber_trace_id): uberTraceId,
 		},
 	}
 }
