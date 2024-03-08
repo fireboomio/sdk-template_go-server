@@ -97,7 +97,7 @@ func configureWunderGraphServer() *echo.Echo {
 				}
 			}
 			headerRequestIdKey := string(types.InternalHeader_X_Request_Id)
-			headerTraceIdKey := string(types.InternalHeader_X_FB_Trace_Id)
+			headerTraceIdKey := string(types.InternalHeader_X_uber_trace_id)
 			internalClient := types.InternalClientFactoryCall(types.RequestHeaders{
 				headerRequestIdKey: c.Request().Header.Get(headerRequestIdKey),
 				headerTraceIdKey:   c.Request().Header.Get(headerTraceIdKey),
