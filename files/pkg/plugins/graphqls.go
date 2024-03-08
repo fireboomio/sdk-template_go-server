@@ -12,6 +12,7 @@ import (
 	"github.com/r3labs/sse/v2"
 	"github.com/tidwall/gjson"
 	"github.com/tidwall/sjson"
+	"golang.org/x/exp/slices"
 	"io"
 	"math"
 	"net/http"
@@ -94,7 +95,7 @@ func GetCallerName(prefix string) string {
 	return strings.TrimSuffix(callerName, filepath.Ext(callerName))
 }
 
-var htmlBytesMap = make(map[string][]byte, 0)
+var htmlBytesMap = make(map[string][]byte)
 
 func RegisterGraphql(schema *graphql.Schema) {
 	// eg. customize/test
@@ -182,13 +183,22 @@ func RegisterGraphql(schema *graphql.Schema) {
 			e.Logger.Error(errorMsg.String())
 			return
 		}
-		res := gjson.GetBytes(respBody, graphqlResultDataPath).String()
 
-		// 写入文件--eg. custom-go/customize/test.go  --> custom-go/customize/test.json
-		err = os.WriteFile(filepath.Join(string(types.HookParent_customize), callerName)+jsonExtension, []byte(res), 0644)
-		if err != nil {
-			e.Logger.Errorf("write file failed, err: %v", err.Error())
-			return
+		graphqlData := gjson.GetBytes(respBody, graphqlResultDataPath).String()
+		writeFileRequired := true
+		jsonFilepath := filepath.Join(string(types.HookParent_customize), callerName) + jsonExtension
+		if jsonBytes, _ := os.ReadFile(jsonFilepath); len(jsonBytes) > 0 {
+			graphqlBytes := []byte(graphqlData)
+			slices.Sort(graphqlBytes)
+			slices.Sort(jsonBytes)
+			writeFileRequired = !slices.Equal(graphqlBytes, jsonBytes)
+		}
+		if writeFileRequired {
+			// 写入文件--eg. custom-go/customize/test.go  --> custom-go/customize/test.json
+			if err = os.WriteFile(jsonFilepath, []byte(graphqlData), 0644); err != nil {
+				e.Logger.Errorf("write file failed, err: %v", err.Error())
+				return
+			}
 		}
 
 		report.Lock()
