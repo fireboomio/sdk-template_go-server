@@ -31,7 +31,8 @@ type {{upperFirst (joinString '_' documentPath)~}}
 type {{upperFirst name}} {{#if valueType}}{{> field_type_simple typeName=valueType}}{{else}}string{{/if}}
 const (
 {{#each values}}
-    {{upperFirst name}}_{{this}} {{upperFirst name}} = {{#if (equalAny valueType ',string')}}"{{this}}"{{else}}{{this}}{{/if}}
+    {{#if valueDescriptionMap}}{{#with (getMapValue valueDescriptionMap this)}}// {{upperFirst name}}_{{../this}} {{this}}
+    {{/with}}{{/if}}{{upperFirst name}}_{{this}} {{upperFirst name}} = {{#if (equalAny valueType ',string')}}"{{this}}"{{else}}{{this}}{{/if}}
 {{/each}}
 )
 {{/each}}
