@@ -1,6 +1,7 @@
 {{~#if typeRefObject~}}
     {{#if typeRefObject.isDefinition}}{{#unless typeRefObject.additional}}*{{/unless}}{{/if}}{{~upperFirst (joinString '_' typeRefObject.documentPath)~}}
 {{~else~}}
+    {{~#if simpleFieldPointerRequired}}{{#unless isArray}}*{{/unless}}{{/if~}}
     {{~#if typeRefEnum~}}
         {{~upperFirst typeRefEnum.name~}}
     {{~else~}}
