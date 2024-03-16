@@ -11,7 +11,8 @@ require (
 	github.com/labstack/echo/v4 v4.10.2
 	github.com/labstack/gommon v0.4.0
 	github.com/r3labs/sse/v2 v2.10.0
-	github.com/shopspring/decimal v1.3.1
+	github.com/shopspring/decimal v1.3.
+	github.com/golang/geo v0.0.0-20230421003525-6adc56603217
 	github.com/spf13/cast v1.3.0
 	github.com/tidwall/gjson v1.11.0
 	github.com/tidwall/sjson v1.0.4
