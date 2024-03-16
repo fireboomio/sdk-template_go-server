@@ -3,16 +3,16 @@ module custom-go
 go 1.19
 
 require (
-	github.com/buger/jsonparser v1.1.1
 	github.com/getkin/kin-openapi v0.118.0
+	github.com/golang/geo v0.0.0-20230421003525-6adc56603217
+	github.com/google/uuid v1.1.1
 	github.com/graphql-go/graphql v0.8.1
 	github.com/invopop/jsonschema v0.7.0
 	github.com/joho/godotenv v1.5.1
 	github.com/labstack/echo/v4 v4.10.2
 	github.com/labstack/gommon v0.4.0
 	github.com/r3labs/sse/v2 v2.10.0
-	github.com/shopspring/decimal v1.3.
-	github.com/golang/geo v0.0.0-20230421003525-6adc56603217
+	github.com/shopspring/decimal v1.3.1
 	github.com/spf13/cast v1.3.0
 	github.com/tidwall/gjson v1.11.0
 	github.com/tidwall/sjson v1.0.4
@@ -37,10 +37,10 @@ require (
 	github.com/tidwall/pretty v1.2.0 // indirect
 	github.com/valyala/bytebufferpool v1.0.0 // indirect
 	github.com/valyala/fasttemplate v1.2.2 // indirect
-	golang.org/x/crypto v0.6.0 // indirect
-	golang.org/x/net v0.7.0 // indirect
-	golang.org/x/sys v0.5.0 // indirect
-	golang.org/x/text v0.7.0 // indirect
+	golang.org/x/crypto v0.21.0 // indirect
+	golang.org/x/net v0.21.0 // indirect
+	golang.org/x/sys v0.18.0 // indirect
+	golang.org/x/text v0.14.0 // indirect
 	golang.org/x/time v0.3.0 // indirect
 	gopkg.in/cenkalti/backoff.v1 v1.1.0 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
