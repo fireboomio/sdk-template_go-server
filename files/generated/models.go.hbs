@@ -9,8 +9,6 @@ import (
     "custom-go/pkg/types"{{/equal}}
     {{~#equal this 'Decimal'}}
     "github.com/shopspring/decimal"{{/equal}}
-    {{~#equal this 'Geometry'}}
-    geo "github.com/golang/geo/s2"{{/equal}}
 {{/each}}
 )
 {{/with}}

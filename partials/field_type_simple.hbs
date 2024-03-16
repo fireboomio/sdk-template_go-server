@@ -7,7 +7,6 @@
     {{~else}}{{#equal typeFormat 'Decimal'}}decimal.Decimal
     {{~else}}{{#equal typeFormat 'Bytes'}}[]byte
     {{~else}}{{#equal typeFormat 'binary'}}*types.UploadFile
-    {{~else}}{{#equal typeFormat 'Geometry'}}geo.Point
     {{~else}}string
-    {{~/equal}}{{/equal}}{{/equal}}{{/equal}}{{/if~}}
+    {{~/equal}}{{/equal}}{{/equal}}{{/if~}}
 {{/equal~}}

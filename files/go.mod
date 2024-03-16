@@ -4,7 +4,6 @@ go 1.19
 
 require (
 	github.com/getkin/kin-openapi v0.118.0
-	github.com/golang/geo v0.0.0-20230421003525-6adc56603217
 	github.com/google/uuid v1.1.1
 	github.com/graphql-go/graphql v0.8.1
 	github.com/invopop/jsonschema v0.7.0
