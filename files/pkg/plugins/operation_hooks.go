@@ -36,6 +36,10 @@ func RegisterOperationsHooks(e *echo.Echo, operations []string, operationHooksMa
 	}
 }
 
+func MakeDataAnyMap(data any) map[string]any {
+	return map[string]any{"data": data}
+}
+
 func registerOperationHooks(e *echo.Echo, operationPath string, operationHooksMap types.OperationHooks) {
 	if operationHook, ok := operationHooksMap[operationPath]; ok {
 		if operationHook.MockResolve != nil {
