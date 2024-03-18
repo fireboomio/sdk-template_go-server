@@ -16,8 +16,11 @@ type (
 	}
 )
 
-func (o *OperationBody[I, O]) ResetResponse() {
+func (o *OperationBody[I, O]) ResetResponse(data ...O) {
 	o.Response = &OperationBodyResponse[O]{}
+	if len(data) > 0 {
+		o.Response.Data = data[0]
+	}
 }
 
 type (
