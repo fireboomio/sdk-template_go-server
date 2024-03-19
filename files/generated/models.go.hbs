@@ -41,5 +41,8 @@ var {{upperFirst name}}DescMap = map[{{upperFirst name}}]string{
     {{upperFirst name}}_{{../this}}: "{{this}}",
     {{/with}}{{/each}}
 }
+func (e {{#if simpleFieldPointerRequired}}*{{/if}}{{upperFirst name}}) String() string {
+    return {{upperFirst name}}DescMap[{{#if simpleFieldPointerRequired}}*{{/if}}e]
+}
 {{/if}}
 {{/each}}
