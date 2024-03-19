@@ -35,4 +35,11 @@ type {{upperFirst name}} {{#if valueType}}{{> field_type_simple typeName=valueTy
     {{/with}}{{/if}}{{upperFirst name}}_{{this}} {{upperFirst name}} = {{#if (equalAny valueType ',string')}}"{{this}}"{{else}}{{this}}{{/if}}
 {{/each}}
 )
+{{#if valueDescriptionMap}}
+var {{upperFirst name}}DescMap = map[{{upperFirst name}}]string{
+    {{#each values}}{{#with (getMapValue valueDescriptionMap this)~}}
+    {{upperFirst name}}_{{../this}}: "{{this}}",
+    {{/with}}{{/each}}
+}
+{{/if}}
 {{/each}}
