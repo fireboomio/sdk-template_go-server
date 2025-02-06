@@ -23,11 +23,10 @@ import (
 	"strings"
 
 	"github.com/buger/jsonparser"
-	graphql "github.com/graphql-go/graphql"
+	"github.com/graphql-go/graphql"
 	"github.com/graphql-go/graphql/gqlerrors"
 	"github.com/labstack/echo/v4"
 	"github.com/r3labs/sse/v2"
-	"github.com/wundergraph/graphql-go-tools/pkg/pool"
 )
 
 var (
@@ -237,15 +236,14 @@ func handleSSEFromChan(c *base.BaseRequestContext, resultChan chan *graphql.Resu
 				return result.Errors[0]
 			}
 
-			bytes, err := json.Marshal(result.Data)
+			dataBytes, err := json.Marshal(result.Data)
 			if err != nil {
 				fmt.Println("JSON 序列化失败：", err)
 				close(resultChan)
 				return err
 			}
-			buf := pool.BytesBuffer.Get()
-			buf.Reset()
-			_ = writeGraphqlResponse(bytes, nil, buf)
+			buf := &bytes.Buffer{}
+			_ = writeGraphqlResponse(dataBytes, nil, buf)
 			_, _ = fmt.Fprintf(c.Response().Writer, "data: %s\n\n", buf.String())
 			flusher.Flush()
 		}
@@ -276,8 +274,7 @@ func handleSSE(c *base.BaseRequestContext, sseChan *base.ResultChan) error {
 				continue
 			}
 
-			buf := pool.BytesBuffer.Get()
-			buf.Reset()
+			buf := &bytes.Buffer{}
 			_ = writeGraphqlResponse(result, nil, buf)
 			_, _ = fmt.Fprintf(c.Response().Writer, "data: %s\n\n", buf.String())
 			flusher.Flush()
@@ -286,8 +283,7 @@ func handleSSE(c *base.BaseRequestContext, sseChan *base.ResultChan) error {
 				continue
 			}
 
-			buf := pool.BytesBuffer.Get()
-			buf.Reset()
+			buf := &bytes.Buffer{}
 			errString, _ := sjson.Set("{}", "message", string(errBytes))
 			_ = writeGraphqlResponse(nil, []byte(errString), buf)
 			_, _ = fmt.Fprintf(c.Response().Writer, "errors: %s\n\n", buf.String())

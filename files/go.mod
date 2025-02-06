@@ -14,7 +14,6 @@ require (
 	github.com/spf13/cast v1.3.0
 	github.com/tidwall/gjson v1.11.0
 	github.com/tidwall/sjson v1.0.4
-	github.com/wundergraph/graphql-go-tools v1.62.3
 	golang.org/x/exp v0.0.0-20230203172020-98cc5a0785f9
 )
 
