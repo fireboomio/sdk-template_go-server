@@ -7,10 +7,12 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	"github.com/labstack/gommon/log"
+	"github.com/spf13/cast"
 	"net"
 	"net/http"
 	"os"
 	"os/signal"
+	"strings"
 	"sync"
 	"syscall"
 	"time"
@@ -49,20 +51,8 @@ func configureWunderGraphServer() *echo.Echo {
 	plugins.RegisterGlobalHooks(e, plugins.WdgHooksAndServerConfig.Hooks.Global)
 	plugins.RegisterAuthHooks(e, plugins.WdgHooksAndServerConfig.Hooks.Authentication)
 
-	registerOnce := &sync.Once{}
 	e.Use(middleware.Recover(), func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
-			registerOnce.Do(func() {
-				for _, registeredHook := range types.GetRegisteredHookArr() {
-					go registeredHook(e.Logger)
-				}
-				if registeredHooks := types.GetRegisteredHookWithClientArr(); len(registeredHooks) > 0 {
-					client := types.NewEmptyInternalClient()
-					for _, registeredHook := range registeredHooks {
-						go registeredHook(e.Logger, client)
-					}
-				}
-			})
 			if c.Request().Method == http.MethodGet {
 				return next(c)
 			}
@@ -101,7 +91,10 @@ func configureWunderGraphServer() *echo.Echo {
 		routerFunc(e)
 	}
 
-	var healthReport *types.HealthReportLock
+	var (
+		healthReport *types.HealthReportLock
+		healthCount  int
+	)
 	e.Server.BaseContext = func(_ net.Listener) context.Context {
 		healthReport = &types.HealthReportLock{}
 		healthReport.Time = time.Now()
@@ -110,9 +103,33 @@ func configureWunderGraphServer() *echo.Echo {
 		}
 		return context.Background()
 	}
+	registerOnce := &sync.Once{}
 	workdir, _ := os.Getwd()
 	// 健康检查
 	e.GET(string(types.Endpoint_health), func(c echo.Context) error {
+		registerAllowed := strings.HasPrefix(c.Request().UserAgent(), "Go-http-client/")
+		if hookReportValue := c.QueryParam("enable-hook-report"); hookReportValue != "" {
+			healthReport.Lock()
+			defer healthReport.Unlock()
+			registerAllowed = !cast.ToBool(hookReportValue) || healthCount == 1
+			if !registerAllowed {
+				e.Logger.Debug("Please wait next health check from Fire-boom")
+				healthCount++
+			}
+		}
+		if registerAllowed {
+			registerOnce.Do(func() {
+				for _, registeredHook := range types.GetRegisteredHookArr() {
+					go registeredHook(e.Logger)
+				}
+				if registeredHooks := types.GetRegisteredHookWithClientArr(); len(registeredHooks) > 0 {
+					client := types.NewEmptyInternalClient()
+					for _, registeredHook := range registeredHooks {
+						go registeredHook(e.Logger, client)
+					}
+				}
+			})
+		}
 		return c.JSON(http.StatusOK, types.Health{
 			Status:  "ok",
 			Report:  &healthReport.HealthReport,
