@@ -113,12 +113,12 @@ func configureWunderGraphServer() *echo.Echo {
 			defer healthReport.Unlock()
 			registerAllowed = !cast.ToBool(hookReportValue) || healthCount == 1
 			if !registerAllowed {
-				e.Logger.Debug("Please wait next health check from Fire-boom")
 				healthCount++
 			}
 		}
 		if registerAllowed {
 			registerOnce.Do(func() {
+				e.Logger.Debug("Receive health check from Fire-boom")
 				for _, registeredHook := range types.GetRegisteredHookArr() {
 					go registeredHook(e.Logger)
 				}
